@@ -23,7 +23,7 @@
 (defn until-escapable [c]
   (many
     (choice
-      (string (str "\\" c))
+      (attempt (string (str "\\" c)))
       (token #(not= % c)))))
 
 ; (word) matches any BibTeX-valid naked identifier, like pubtype, citekey, or field key
@@ -38,7 +38,7 @@
   ; accept any number of things that are not (unescaped) close curly braces
   ; returns a chunk of tex, which is either a string or a single character
   (choice
-    (string "\\}") ; matches same thing as (string [\\ \}]) but has different result
+    (attempt (string "\\}")) ; matches same thing as (string [\\ \}]) but has different result
     (any-char-except #{\{ \}})
     (between (char \{)
              (char \})
@@ -111,10 +111,32 @@
                      (choice (reference)
                              (comment))))))
 
-(defn parse-single
-  [s]
-  (println s "TODO"))
+(def ^:dynamic *indent* "  ")
+
+(defn comment->string
+  [{:keys [comment]}]
+  (str "% " comment))
+
+(defn field->string
+  [{:keys [key value]}]
+  (str *indent* key \space \= \space value \, \newline))
+
+(defn reference->string
+  [{:keys [pubtype citekey fields]}]
+  (str \@ pubtype \{ citekey \, \newline
+    (apply str (map field->string fields))
+    \}))
+
+(defn entry->string
+  [entry]
+  (cond
+    (:comment entry) (comment->string entry)
+    (:pubtype entry) (reference->string entry)
+    :else (str "Unrecognized entry: " entry)))
 
 (defn parse
+  "take a string of BibTeX, return a string of BibTeX"
   [s]
-  (println s "TODO"))
+  (println (str "parsing " (count s) "-character string"))
+  (let [entries (run (bibliography) s)]
+    (string/join \newline (map entry->string entries))))
