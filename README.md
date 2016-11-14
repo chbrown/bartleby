@@ -69,6 +69,23 @@ The parser 5-tuple:
 * `let->>` binds a sequence of parsers to their result values
   - > Every right hand side in a `let->>` binding form has to evaluate to a parser.
 
+#### debugging
+
+It's pretty hard to debug a big parsatron grammar.
+It'd be madness without the REPL, but building up grammars incrementally with a lot of feedback makes it feasible.
+
+The following error messages are followed by a translation of the (potential) real issue:
+
+    ClassCastException java.lang.String cannot be cast to clojure.lang.IFn
+    the.parsatron/bind/fn--204/pcok--205/fn--206/fn--207 (parsatron.clj:97)
+
+You forgot to wrap the string you're trying to return from your `(defparser ...)` in an `(always ...)`.
+
+    ArityException Wrong number of args (5) passed to: PersistentVector
+    clojure.lang.AFn.throwArity (AFn.java:429)
+
+You forgot to wrap the vector you're trying to return from your `(defparser ...)` in an `(always ...)`.
+
 
 ## License
 
