@@ -7,7 +7,8 @@
                  [org.clojure/data.json "0.2.6"]
                  [the/parsatron "0.0.7"]]
   :plugins [[lein-cljsbuild "1.1.4" :exclusions [[org.clojure/clojure]]]]
-  :profiles {:dev {:source-paths ["dev"] / ["src" "dev"]
+  :profiles {:dev {:source-paths ["dev" "test"]
+                   :resource-paths ["test/resources"]
                    :dependencies [[org.clojure/tools.namespace "0.3.0-alpha3"]
                                   [org.clojure/java.classpath "0.2.3"]]
                    :repl-options {:init (set! *print-length* 50)}}}
