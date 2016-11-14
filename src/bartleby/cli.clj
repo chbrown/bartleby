@@ -1,10 +1,10 @@
 (ns bartleby.cli
-  (:require [bartleby.bibtex :refer [parse]])
+  (:require [bartleby.bibtex :as bibtex])
   (:gen-class))
 
 (defn -main
   []
   (println "Running bartleby.cli/main")
   (-> (slurp *in*)
-      (parse)
+      (bibtex/bibtex->bibtex)
       (println)))
