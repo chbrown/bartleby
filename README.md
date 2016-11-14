@@ -1,5 +1,8 @@
 # bartleby
 
+[![Travis CI Build Status](https://travis-ci.org/chbrown/bartleby.svg)](https://travis-ci.org/chbrown/bartleby)
+[![Coveralls Coverage Status](https://coveralls.io/repos/chbrown/bartleby/badge.svg)](https://coveralls.io/github/chbrown/bartleby)
+
 A very _faithful_ BibTeX parser.
 
 - Preserves comments, order, formatting, string interpolations
