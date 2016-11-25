@@ -53,11 +53,11 @@
     (always (fancy-character-commands command))))
 
 ; TeX's special characters are:
-;     # $ % & \ ^ _ { }
+;     # $ % & \ ^ _ { } ~
 ; \^ is a valid command, for circumflex accents.
 ; Otherwise, these characters, and a few others that are also special,
 ; can be escaped and pass through directly.
-(def ^:private tex-delimiters #{\# \$ \% \& \\ \_ \{ \} \@ \~ \space})
+(def ^:private tex-delimiters #{\# \$ \% \& \\ \_ \{ \} \~ \@ \space})
 (defparser escaped-misc []
   (let->> [_ (char \\)
            c (token tex-delimiters)]
