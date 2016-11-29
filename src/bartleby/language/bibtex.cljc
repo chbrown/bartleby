@@ -39,6 +39,14 @@
   (toJSON [this]
     {"comment" comment}))
 
+(defn fromJSON
+  [object]
+  (if (contains? object "pubtype")
+    ; (map->Reference object)
+    (Reference. (get object "pubtype") (get object "citekey") (dissoc object "pubtype" "citekey"))
+    ; (map->Comment object)
+    (Comment. (get object "comment"))))
+
 ; parsing
 ; =======
 
