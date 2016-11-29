@@ -1,4 +1,4 @@
-(ns bartleby.parsers
+(ns bartleby.language.common
   (:refer-clojure :exclude [char])
   (:require [the.parsatron :refer :all]))
 

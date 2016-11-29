@@ -1,13 +1,51 @@
-(ns bartleby.bibtex
-  (:refer-clojure :exclude [char comment]) ; avoid warning about parsatron overriding (char)
+(ns bartleby.language.bibtex
+  (:refer-clojure :exclude [char comment read]) ; avoid warning about parsatron overriding (char)
   (:require [clojure.string :as string]
             [the.parsatron :refer :all]
-            [bartleby.parsers :refer :all]))
+            [bartleby.language.common :refer :all]))
 
-(def delimiter-chars (into whitespace-chars #{\, \{ \}}))
+; object model (records)
+; ======================
+
+(defprotocol Indented
+  (toString [this indent] "Return customized string representation"))
+
+(defprotocol ToJSON
+  (toJSON [this] "Flatten the record to a flat JSON-friendly structure"))
+
+(defrecord Reference [pubtype citekey fields]
+  Object
+  (toString [this] (toString this "  "))
+  Indented
+  (toString [this indent]
+    ; omit citekey (and the comma after) if citekey is nil
+    (str \@ pubtype \{ (some-> citekey (str \,)) \newline
+      (->>
+        (for [{:keys [key value]} fields]
+          (str indent key \space \= \space value \, \newline))
+        (apply str))
+      \}))
+  ToJSON
+  (toJSON [this]
+    (into {"pubtype" pubtype, "citekey" citekey} fields)))
+
+(defrecord Comment [comment]
+  Object
+  (toString [this]
+    (str "% " comment))
+  Indented
+  (toString [this indent] (toString this))
+  ToJSON
+  (toJSON [this]
+    {"comment" comment}))
+
+; parsing
+; =======
+
+(def ^:private delimiter-chars (into whitespace-chars #{\, \{ \} \=}))
 
 ; greedily consume the input until hitting the designated token, also consuming escaped instances
-(defn until-escapable [c]
+(defn- until-escapable [c]
   (many
     (choice
       (attempt (string (str "\\" c)))
@@ -65,78 +103,79 @@
 ; (field) applies while within the braces of a BibTeX entry; it matches a
 ; single key-value field pair and consumes the following comma, if any.
 (defparser field []
-  (let->> [_ whitespace
-           key (word)
+  (let->> [key (word)
            _ whitespace
            _ (char \=)
            _ whitespace
            value (field-value)
            _ whitespace
-           _ (maybe (char \,))]
+           _ (maybe (char \,))
+           _ whitespace]
     (always {:key key
              :value value})))
 
-; (reference) matchs a single BibTeX entry, returning a hash
+; (reference) matchs a single BibTeX entry, returning a Reference record
 (defparser reference []
   (let->> [_ (char \@)
            pubtype (word)
            _ (char \{)
-           citekey (maybe (before (char \,) (word)))
            _ whitespace
-           fields (many (field))
-           ; handle entries with closed by eof rather than a proper close brace,
+           citekey (maybe (before (>> whitespace (char \,)) (word)))
+           _ whitespace
+           fields (many (attempt (field)))
+           ; handle entries closed by eof rather than a proper close brace,
            ; which happens quite a bit more than you'd think
-           _ (either (char \}) (eof))]
-    (always {:pubtype pubtype
-             :citekey citekey
-             :fields fields})))
+           ; perhaps the lookahead wrapper isn't necessary?
+           _ (either (char \}) (lookahead (eof)))]
+    (always (Reference. pubtype citekey fields))))
 
+; (comment) captures a single line of a comment, returning a Comment record
 (defparser comment []
   (let->> [_ (char \%)
            _ whitespace
            characters (many1 (any-char-except \newline))
            _ (char \newline)]
-    (always {:comment (apply str characters)})))
+    (always (Comment. (apply str characters)))))
 
-(defparser bibliography []
+(defparser item []
   ; the attempt is necessary since otherwise gardenpathing due to whitespace but then hitting eof will break
   ; or maybe looking for eof would be stricter solution?
   ; nope, that doesn't work -- produces "No matching clause" error
-  (many (attempt (>> whitespace
-                     ; TODO: handle special commands like @preamble or @string.
-                     (choice (reference)
-                             (comment))))))
+  (attempt (>> whitespace
+               ; TODO: handle special commands like @preamble or @string.
+               (choice (reference)
+                       (comment)))))
 
-(def ^:dynamic *indent* "  ")
+(defparser all-items []
+  (let->> [items (many (item))
+           _ whitespace
+           _ (eof)]
+    (always items)))
 
-(defn comment->string
-  [{:keys [comment]}]
-  (str "% " comment))
+; similar to clojure.data.json (http://clojure.github.io/data.json/),
+; the primary API consists of the functions read and write
 
-(defn field->string
-  [{:keys [key value]}]
-  (str *indent* key \space \= \space value \, \newline))
+(defn read
+  "read the first bibliography item from the given stream of BibTeX characters"
+  [reader]
+  (run (item) reader))
 
-(defn reference->string
-  [{:keys [pubtype citekey fields]}]
-  ; omit citekey (and the comma after) if citekey is nil
-  (str \@ pubtype \{ (some-> citekey (str \,)) \newline
-    (apply str (map field->string fields))
-    \}))
-
-(defn entry->string
-  [entry]
-  (cond
-    (:comment entry) (comment->string entry)
-    (:pubtype entry) (reference->string entry)
-    :else (str "Unrecognized entry: " entry)))
-
-(defn parse
-  "take a string of BibTeX, return a seq of plain Clojure entry objects"
+(defn read-str
+  "read the first bibliography item from the given string of BibTeX"
   [s]
-  (run (bibliography) s))
+  ; TODO: convert s to decomplected (generic b/w clj and cljs) reader first?
+  (read s))
 
-(defn bibtex->bibtex
+(defn write-str
+  [bibtex-record & options]
+  (toString bibtex-record (get options :indent "  ")))
+
+(defn write
+  [bibtex-record writer & options]
+  (.write writer (write-str bibtex-record options)))
+
+; read-all and copy are kind of hacks until I get a better handle
+; on a/the common interface around clj/cljs readers
+(defn read-all
   [s]
-  "take a string of BibTeX, return a string of BibTeX"
-  (->> s parse (map entry->string) (string/join \newline)))
+  (run (all-items) s))

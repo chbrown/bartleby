@@ -1,7 +1,7 @@
-(ns bartleby.tex
-  (:refer-clojure :exclude [char])
+(ns bartleby.language.tex
+  (:refer-clojure :exclude [char read])
   (:require [the.parsatron :refer :all]
-            [bartleby.parsers :refer :all]))
+            [bartleby.language.common :refer :all]))
 
 (def ^:private accent-commands {
   \` "\u0300"
@@ -100,6 +100,9 @@
     (attempt (block)) ; returns seq of strings
     (any-char-except-in #{\\ \{ \}}))) ; anything except slashes or braces
 
-(defn tex-block->string
-  [s]
-  (run (block) s))
+(defn read
+  "Take a string of TeX, return a string of TeX"
+  [reader]
+  (run (block) reader))
+
+(defn read-str [s] (read s))
