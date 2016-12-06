@@ -37,9 +37,25 @@ The parser 5-tuple:
 
     state, cok, cerr, eok, eerr
 
-* `eok` is called on when encountering valid empty input
+* `state` (`InputState` record) is a 2-tuple of the input, `input`, and the position, `pos`, which is a `SourcePos` (which has two integer fields, `line` and `column`).
+* `cok` "I consumed something and I'm still OK"
+  - is called to consume valid non-empty input
+  - primary example: `(token)`, which succeeds if the input is non-empty, and calls `(cok x next-input-state)`, where `x` is the first thing taken from the input and `next-input-state` is a new `InputState` instance created with the consumed/advanced input and the incremented state tracker. If the input is empty, calls `(eerr new-error)`, where `new-error` conveys a message like "Unexpected end of input".
+* `cerr` "I consumed something but I don't know what happened I'm broken"
+* `eok` "I didn't consume anything and that's what I expected"
+  - is called on when encountering valid empty input
   - it's a function that takes a new token from the input stream, and the current state, and... returns a new state?
-* `cok` is called to consume valid non-empty input
+  - primary example: `(always x)` which is a parser that consumes nothing and calls `(eok x state)`
+* `eerr` "I didn't consume anything and I'm still broken"
+  - primary example `(never)`, which consumes nothing and calls `(eerr new-error)`, where `new-error` is something that we can easily check for in the calling container (e.g., in the default implementation, a `ParseError` instance)
+
+The functions `cok`, `cerr`, `eok`, and `eerr` are 'escape hatches' (callbacks, in a way) that the parser uses to exit.
+The `*ok` ones (usually) take two arguments: the parsed thing and resulting state.
+The `*err` ones take one argument: the Error instance.
+
+I don't know enough about parser combinators to guess why they call a function instead of returning a 2-bit enumeration (e.g., a boolean vector `[consumed?, ok?]`) + the parsed thing or error instance. That would be an inversion of flow, but seems less callback-oriented and thus more straightforward?
+
+I wish the author had explained where `cok` et al. come from in [his talk](https://www.infoq.com/presentations/Parser-Combinators), and I'm surprised no one asked in the extensive Q&A.
 
 
 #### Built-in parser creators
