@@ -1,5 +1,4 @@
 (ns bartleby.cli
-  (:refer-clojure :exclude [line-seq])
   (:require [clojure.string :as string]
             [clojure.data.json :as json]
             [bartleby.core :refer :all]
@@ -61,6 +60,8 @@
 
 (defn -main
   [& args]
+  ; *in* returns (LineNumberingPushbackReader. System/in)
+  ; (io/reader *in*) -- convert to java.io.Reader, specifically, a java.io.BufferedReader
   ;(println "Running bartleby.cli/main with args" args)
   ; io/reader doesn't cut it ("Don't know how to create ISeq from: java.io.BufferedReader")
   ; do stdin / stdout ever need (with-open [in/output *in/out*] ...) ?

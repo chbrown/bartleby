@@ -1,5 +1,4 @@
 (ns bartleby.core
-  (:refer-clojure :exclude [line-seq])
   (:require [clojure.string :as string]
             [bartleby.language.bibtex :as bibtex]
             [bartleby.language.tex :as tex]))
@@ -8,15 +7,6 @@
   "Like update but only calls f if m contains k"
   [m k f & args]
   (if (contains? m k) (apply update m k f args) m))
-
-(defn line-seq
-  "straight from the standard library but without the BufferedReader type assertion"
-  [rdr]
-  ; .readLine returns "A String containing the contents of the line,
-  ; not including any line-termination characters,
-  ; or null if the end of the stream has been reached"
-  (when-let [line (.readLine rdr)]
-    (cons line (lazy-seq (line-seq rdr)))))
 
 ; based on line-seq from standard library
 (defn char-seq
