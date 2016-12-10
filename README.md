@@ -42,6 +42,11 @@ The parser 5-tuple:
   - is called to consume valid non-empty input
   - primary example: `(token)`, which succeeds if the input is non-empty, and calls `(cok x next-input-state)`, where `x` is the first thing taken from the input and `next-input-state` is a new `InputState` instance created with the consumed/advanced input and the incremented state tracker. If the input is empty, calls `(eerr new-error)`, where `new-error` conveys a message like "Unexpected end of input".
 * `cerr` "I consumed something but I don't know what happened I'm broken"
+  - `cerr` is never directly called in the `parsatron` source. But it is aliased to other escape hatches in two places: 1) in `(bind p q)`, which maps q's calling of `eerr` to the outer `cerr`; 2) inside `(attempt p)`, which short-circuits p calling `cerr` into `eerr` calls, so that whoever is calling the `(attempt p)` parser treats any errors as non-consumption.
+  - For example, `(run (either (string "ab") (string "ac")) "ac")` fails,
+    because the first parser `(string "ab")` fails with a `cerr`, and `(either p q)` tries `q` if and only if `p` uses the `eerr` escape hatch.
+  - But `(run (either (attempt (string "ab")) (string "ac")) "ac")` succeeds,
+    because the `(attempt ...)` turns the inner `cerr` into an `eerr`, which allows the second parser to run.
 * `eok` "I didn't consume anything and that's what I expected"
   - is called on when encountering valid empty input
   - it's a function that takes a new token from the input stream, and the current state, and... returns a new state?
