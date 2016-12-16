@@ -157,20 +157,11 @@
            _ (char \newline)]
     (always (Comment. (apply str characters)))))
 
-(defparser item []
-  ; the attempt is necessary since otherwise gardenpathing due to whitespace but then hitting eof will break
-  ; or maybe looking for eof would be stricter solution?
-  ; nope, that doesn't work -- produces "No matching clause" error
-  (attempt (>> whitespace
-               ; TODO: handle special commands like @preamble or @string.
-               (choice (reference)
-                       (comment)))))
-
-(defparser all-items []
-  (let->> [items (many (item))
-           _ whitespace
-           _ (eof)]
-    (always items)))
+(defn item []
+  (>> whitespace
+      ; TODO: handle special commands like @preamble or @string.
+      (choice (reference)
+              (comment))))
 
 ; similar to clojure.data.json (http://clojure.github.io/data.json/),
 ; the primary API consists of the functions read and write
@@ -194,8 +185,7 @@
   [bibtex-record writer & options]
   (.write writer (write-str bibtex-record options)))
 
-; read-all and copy are kind of hacks until I get a better handle
-; on a/the common interface around clj/cljs readers
 (defn read-all
   [s]
-  (run (all-items) s))
+  (run-seq (item)
+           (>> whitespace (eof)) s))

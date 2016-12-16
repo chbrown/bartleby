@@ -1,6 +1,7 @@
 (ns bartleby.language.common
   (:refer-clojure :exclude [char])
-  (:require [the.parsatron :refer :all]))
+  (:require [the.parsatron :refer :all])
+  (:import [the.parsatron InputState SourcePos]))
 
 (def whitespace-chars #{\space \newline \tab})
 (def whitespace (many (token whitespace-chars)))
@@ -32,3 +33,29 @@
   (let->> [x p
            _ close]
     (always x)))
+
+;; stuff that could be in parsatron upstream:
+
+; similar to parsatron/run-parser
+(defn run-parser-seq
+  [p endp state]
+  (letfn [(pcok [item new-state]
+            (cons item (lazy-seq (run-parser-seq p endp new-state))))
+          (peok [_ {:keys [pos]}]
+            (throw (fail (show-error (unexpect-error "that run-seq parser p would accept an empty string" pos)))))
+          (perr [err-from-p]
+            (letfn [(endpok [_ _]
+                      nil)
+                    (endperr [err-from-endp]
+                      (throw (fail (show-error (merge-errors err-from-p err-from-endp)))))]
+              (parsatron-poline endp state endpok endperr endpok endperr)))]
+    (parsatron-poline p state pcok perr peok perr)))
+
+; similar to parsatron/run
+(defn run-seq
+  "Repeatedly run the parser p over the input.
+  If the parser produces an error, try endp.
+  If endp fails, fail with both p's and endp's errors."
+  [p endp input]
+  (let [initial-state (InputState. input (SourcePos. 1 1))]
+    (run-parser-seq p endp initial-state)))
