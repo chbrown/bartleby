@@ -28,7 +28,7 @@
 ;   \~\i
 ; TODO: handle stuff like \'\i and composed modifiers like \'{\c{c}}
 ; returns the proper Unicode string
-(defparser accent []
+(defn accent []
   (let->> [_ (char \\)
            command (token accent-commands)
            body (either (letter) (curly-braced (letter)))]
@@ -45,7 +45,7 @@
 ;   \i => ı
 ;   \o => ø
 ; returns a Unicode string
-(defparser fancy-character []
+(defn fancy-character []
   (let->> [_ (char \\)
            command (token fancy-character-commands)]
     ; the fancy character command might have an empty argument (e.g., \i{})
@@ -58,7 +58,7 @@
 ; Otherwise, these characters, and a few others that are also special,
 ; can be escaped and pass through directly.
 (def ^:private tex-delimiters #{\# \$ \% \& \\ \_ \{ \} \~ \@ \space})
-(defparser escaped-misc []
+(defn escaped-misc []
   (let->> [_ (char \\)
            c (token tex-delimiters)]
     (always c)))
@@ -70,7 +70,7 @@
 ;   {\bf NLP}                      => NLP
 ; it always returns nil, and should come after the fancy-character parser,
 ; which handles a subset of such commands that can be represented in Unicode
-(defparser macro []
+(defn macro []
   (>> (char \\)
       (many1 (letter))
       (many (token whitespace-chars))
@@ -88,7 +88,7 @@
 
 ; (node) returns a node from a TeX tree, which are all (potentially recursively)
 ; converted to strings by nested parsers
-(defparser node []
+(defn node []
   (choice
     (attempt (accent)) ; returns string
     (attempt (fancy-character)) ; returns string

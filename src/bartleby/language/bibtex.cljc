@@ -7,6 +7,8 @@
 ; object model (records)
 ; ======================
 
+(defrecord Field [key value])
+
 (defprotocol Indented
   (toString [this indent] "Return customized string representation"))
 
@@ -52,24 +54,28 @@
 
 (def ^:private delimiter-chars (into whitespace-chars #{\, \{ \} \=}))
 
-; greedily consume the input until hitting the designated token, also consuming escaped instances
-(defn- until-escapable [c]
+(defn- until-escapable
+  "greedily consume the input until hitting the designated token,
+  also consuming escaped instances"
+  [c]
   (many
     (choice
       (attempt (string (str "\\" c)))
       (token #(not= % c)))))
 
-; (word) matches any BibTeX-valid naked identifier, like pubtype, citekey, or field key
-; i.e., a contiguous string of anything but whitespace, commas, and end braces.
-(defparser word []
+(defn word
+  "Match any BibTeX-valid naked identifier, like pubtype, citekey, or field key,
+  i.e., a contiguous string of anything but whitespace, commas, and end braces."
+  []
   (let->> [chars (many1 (any-char-except-in delimiter-chars))]
     (always (apply str chars))))
 
 ; tex-chunk and tex-block are mutually recursive
 (declare tex-block)
 
+; doesn't work in naked defn form, even when simplified, due to mutual recursion;
+; one of them (tex-block or tex-chunk) has to be lazy!
 (defparser tex-chunk []
-  ; (doesn't work in naked defn form, even when simplified)
   ; accept any number of things that are not (unescaped) close curly braces
   ; returns a chunk of tex, which is either a string or a single character
   (choice
@@ -78,39 +84,43 @@
     (any-char-except-in #{\{ \}})
     (curly-braced (tex-block))))
 
-(defparser tex-block []
-  ; always returns a single string enclosed in braces
+(defn tex-block
+  "Reads a block of TeX syntax, recursively, and returns a single string
+  enclosed in curly braces"
+  []
   (let->> [chunks (many (tex-chunk))]
     (always (str \{ (apply str chunks) \}))))
 
-(defparser simple-string []
+(defn simple-string
+  "Read a simple string literal and convert to TeX syntax"
+  []
   (let->> [chars (until-escapable \")]
-    ; convert string literal to tex block format here,
-    ; by unescaping quotes and escaping braces
     (let [s (apply str chars)
+          ; unescaped quotes
           raw (string/replace s #"\\\"" "\"")
+          ; escaped braces
           escaped (string/replace raw #"[{}]" "\\\\$0")]
       (always (str \{ escaped \})))))
 
-(defparser number-literal []
+(defn number-literal
+  "Consume one or more digits and return a string in TeX syntax (in curly braces)"
+  []
   (let->> [chars (many1 (digit))]
-    ; just like simple-string, coerce to braced format
     (always (str \{ (apply str chars) \}))))
 
-(defparser field-value []
+(defn field-value
+  "Read the RHS of a field-value field pair, as a string"
+  []
   ; should this handle whitespace, or should the field parser (as is currently the case)?
-  (choice (between (char \{)
-                   (char \})
-                   (tex-block))
-          (between (char \")
-                   (char \")
-                   (simple-string))
+  (choice (curly-braced (tex-block))
+          (double-quoted (simple-string))
           ; TODO: handle string variable references
           (number-literal)))
 
-; (field) applies while within the braces of a BibTeX entry; it matches a
-; single key-value field pair and consumes the following comma, if any.
-(defparser field []
+(defn field
+  "Use within the outer braces of a BibTeX entry, to capture a single key-value
+  field pair and consume the following comma and whitespace, if any."
+  []
   (let->> [key (word)
            _ whitespace
            _ (char \=)
@@ -119,11 +129,11 @@
            _ whitespace
            _ (maybe (char \,))
            _ whitespace]
-    (always {:key key
-             :value value})))
+    (always (Field. key value))))
 
-; (reference) matchs a single BibTeX entry, returning a Reference record
-(defparser reference []
+(defn reference
+  "Capture a single BibTeX entry, returning a Reference record"
+  []
   (let->> [_ (char \@)
            pubtype (word)
            _ (char \{)
@@ -134,11 +144,13 @@
            ; handle entries closed by eof rather than a proper close brace,
            ; which happens quite a bit more than you'd think
            ; perhaps the lookahead wrapper isn't necessary?
-           _ (either (char \}) (lookahead (eof)))]
+           ; was: (lookahead (eof))
+           _ (either (char \}) (eof))]
     (always (Reference. pubtype citekey fields))))
 
-; (comment) captures a single line of a comment, returning a Comment record
-(defparser comment []
+(defn comment
+  "Captures a single line of a comment, returning a Comment record"
+  []
   (let->> [_ (char \%)
            _ whitespace
            characters (many1 (any-char-except \newline))

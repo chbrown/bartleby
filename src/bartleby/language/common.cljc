@@ -22,6 +22,9 @@
   ; p, e.g., (many (any-char-except #{\{ \}}))
   (between (char \{) (char \}) p))
 
+(defn double-quoted [p]
+  (between (char \") (char \") p))
+
 (defn before
   "Parse p followed by close, but return the value of p;
    equivalent to (between (always nil) close p)"
