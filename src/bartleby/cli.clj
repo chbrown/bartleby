@@ -6,14 +6,14 @@
             [clojure.java.io :as io])
   (:gen-class))
 
-(defn filename->citekeys
+(defn- filename->citekeys
   [filename]
   (condp #(string/ends-with? %2 %1) filename
     ".tex" (-> filename slurp core/tex->citekeys)
     ".aux" (-> filename slurp core/aux->citekeys)
     []))
 
-(defn select-cited-from-filenames
+(defn- select-cited-from-filenames
   "Select only the cited entries from a bibliography, given a list of .tex and .bib files"
   [filenames]
   (let [citekeys (mapcat filename->citekeys filenames)
@@ -24,48 +24,47 @@
         items (mapcat #(-> % io/reader core/char-seq bibtex/read-all) bib-filenames)]
     (filter keep? items)))
 
+(defn- write-item
+  [output item]
+  (.write output (str (bibtex/write-str item :trailing-comma? true, :=-padded? true) \newline)))
+
 ; call run like: (run input output [command options...])
 (defmulti run (fn [_ _ [command & _]] command))
 (defmethod run "cat"
-  [input output args]
-  ; (doseq ...) is non-lazy version of (for ...)
   ; Parse a stream of BibTeX to structured representation, and then format as standard BibTeX
+  [input output args]
   (doseq [item (bibtex/read-all input)]
-    (.write output (bibtex/write-str item {:trailing-comma? false, :=-padded? false}))
-    (.write output (str \newline))))
+    (write-item output item)))
 (defmethod run "json"
   ; Parse a stream of BibTeX and format as JSON
   [input output args]
   (doseq [item (bibtex/read-all input)]
-    (json/write (.toJSON item) output)
-    (.write output (str \newline))))
-;(defn json-bib
-;  "Parse JSON-LD and format as standard BibTeX"
-;  [input output]
-;  (for [line (line-seq input)]
-;    (-> line
-;        (json/read-str)
-;        (bibtex/fromJSON)
-;        (bibtex/write output))))
+    (.write output (str (json/write-str (.toJSON item)) \newline))))
+(defmethod run "json2bib"
+  ; Parse JSON-LD and format as standard BibTeX
+  [input output args]
+  (doseq [line (line-seq input)]
+    (->> line
+         (json/read-str)
+         (bibtex/fromJSON)
+         (write-item output))))
 (defmethod run "test"
   [input output args]
   ; TODO: take filenames, and print the name of each unparseable file to STDERR
   (.write output (if (core/bibtex? input) "yes\n" "no\n")))
 (defmethod run "select"
   [_ output args]
-  (let [selected-references (select-cited-from-filenames args)]
-    (doseq [item selected-references]
-      (.write output (str (bibtex/write-str item {:trailing-comma? false, :=-padded? false}) \newline)))))
+  (doseq [item (select-cited-from-filenames args)]
+    (write-item output item)))
 (defmethod run :default
   [input output args]
-  (.write output (apply str "unrecognized arguments: " args))
-  (.write output "\n"))
+  (.write output (str "unrecognized arguments: " (apply str args) \newline)))
 
 (defn -main
   [& args]
-  ; *in* returns (LineNumberingPushbackReader. System/in)
-  ; (io/reader *in*) -- convert to java.io.Reader, specifically, a java.io.BufferedReader
-  ;(println "Running bartleby.cli/main with args" args)
-  ; io/reader doesn't cut it ("Don't know how to create ISeq from: java.io.BufferedReader")
-  ; do stdin / stdout ever need (with-open [in/output *in/out*] ...) ?
-  (run (core/char-seq *in*) *out* args))
+  ; *in* returns (LineNumberingPushbackReader. System/in), which is an
+  ; io/reader, but io/reader doesn't cut it:
+  ; "Don't know how to create ISeq from: java.io.BufferedReader"
+  (run (core/char-seq *in*) *out* args)
+  ; weirdly, System/out doesn't always get automatically flushed
+  (.flush *out*))
