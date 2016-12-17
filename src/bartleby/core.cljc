@@ -38,18 +38,20 @@
         [key (-> value tex/read normalize-nfc collapse-space)]))))
 
 (defn tex->citekeys
-  "Extract the citekeys references in a TeX document (using RegExp)"
-  [tex-string]
-  (->> tex-string
-    ; super-simple regular expression solution (doesn't detect commented-out citations)
-    (re-seq #"\\\w*cite\w*\{([^}]+)\}")
-    ; split each csv multicite \*cite*{albert:1995,brumhilda:1990,etc} into its component parts and flatten
-    (mapcat #(string/split % #","))))
+  "Extract the citekeys in a TeX document (using regular expressions)"
+  [s]
+  ; super-simple regular expression solution (doesn't detect commented-out citations)
+  ; re-seq returns a sequence of vectors, each N-groups long. We want the second group (the first captured group).
+  ; the (apply concat ...) flattens the results
+  ; TODO: find out if there's a better (for-cat [binding] ...) idiom in the std lib?
+  (apply concat (for [[_ citekey-csv] (re-seq #"\\\w*cite\w*\{([^}]+)\}" s)]
+                  ; split each csv multicite \*cite*{albert:1995,brumhilda:1990,etc} into its component parts
+                  (string/split citekey-csv #","))))
 
-(defn filter-cited
-  "Select only the cited entries from a bibliography, given a list of .tex and .bib files"
-  [references citekeys]
-  (filter (fn [reference] (contains? citekeys (:citekey reference))) references))
+(defn aux->citekeys
+  "Extract the citekeys in an aux document (using regular expressions)"
+  [s]
+  (map second (re-seq #"\\abx@aux@cite\{([^}]+)\}" s)))
 
 (defn bibtex?
   "Test that the given stream can be parsed as BibTeX"
