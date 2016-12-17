@@ -9,45 +9,57 @@
 
 (defrecord Field [key value])
 
-(defprotocol Indented
-  (toString [this indent] "Return customized string representation"))
+(defprotocol Formattable
+  (toString [this options] "Return customized string representation"))
 
 (defprotocol ToJSON
   (toJSON [this] "Flatten the record to a flat JSON-friendly structure"))
 
+(defn- field-formatter
+  "Helper function for currying the indentation and =-padding options
+  before formatting multiple fields"
+  [indentation =-padding]
+  (fn [{:keys [key value]}]
+    (str indentation key =-padding \= =-padding value)))
+
 (defrecord Reference [pubtype citekey fields]
   Object
-  (toString [this] (toString this "  "))
-  Indented
-  (toString [this indent]
+  (toString [this] (toString this {}))
+  Formattable
+  (toString [this {:keys [indentation
+                          trailing-comma?
+                          =-padded?]
+                   :or   {indentation    "  "
+                          trailing-comma? true
+                          =-padded?       true}}]
     ; omit citekey (and the comma after) if citekey is nil
     (str \@ pubtype \{ (some-> citekey (str \,)) \newline
-      (->>
-        (for [{:keys [key value]} fields]
-          (str indent key \space \= \space value \, \newline))
-        (apply str))
-      \}))
+         (->> fields
+              (map (field-formatter indentation (when =-padded? \space)))
+              (string/join (str \, \newline)))
+         (when trailing-comma? \,) \newline
+         \} \newline))
   ToJSON
   (toJSON [this]
     (into {"pubtype" pubtype, "citekey" citekey} fields)))
 
-(defrecord Comment [comment]
+(defrecord Gloss [lines]
   Object
   (toString [this]
-    (str "% " comment))
-  Indented
-  (toString [this indent] (toString this))
+    (string/join \newline lines))
+  Formattable
+  (toString [this _] (toString this))
   ToJSON
   (toJSON [this]
-    {"comment" comment}))
+    {"lines" lines}))
 
 (defn fromJSON
   [object]
   (if (contains? object "pubtype")
     ; (map->Reference object)
     (Reference. (get object "pubtype") (get object "citekey") (dissoc object "pubtype" "citekey"))
-    ; (map->Comment object)
-    (Comment. (get object "comment"))))
+    ; (map->Gloss object)
+    (Gloss. (get object "lines"))))
 
 ; parsing
 ; =======
@@ -148,23 +160,37 @@
            _ (either (char \}) (eof))]
     (always (Reference. pubtype citekey fields))))
 
-(defn comment
-  "Captures a single line of a comment, returning a Comment record"
+(defn gloss-line-characters
+  "Captures a single line of interlinear comments,
+  i.e., whatever is not a Reference,
+  returning a sequence of characters"
   []
-  (let->> [_ (char \%)
-           _ whitespace
-           characters (many1 (any-char-except \newline))
-           _ (char \newline)]
-    (always (Comment. (apply str characters)))))
+  (between (lookahead (any-char-except \@))
+           (char \newline)
+           (many (any-char-except \newline))))
 
-(defn item []
+(defn gloss-line
+  ; TODO: create a parsastron helper to map a parser's cok/eok values through the given function and merge this wrapper with gloss-line-characters
+  []
+  (let->> [characters (gloss-line-characters)]
+    (always (apply str characters))))
+
+(defn gloss
+  []
+  (let->> [lines (many1 (gloss-line))]
+    (always (Gloss. lines))))
+
+(defn item
+  "Capture any valid bibtex item, potentially preceded by whitespace"
+  []
+  ; reference and gloss very intentionally have no shareable prefix, so no (attempt ...) is needed
   (>> whitespace
       ; TODO: handle special commands like @preamble or @string.
       (choice (reference)
-              (comment))))
+              (gloss))))
 
 ; similar to clojure.data.json (http://clojure.github.io/data.json/),
-; the primary API consists of the functions read and write
+; the primary API consists of the functions read(-str) and write(-str)
 
 (defn read
   "read the first bibliography item from the given stream of BibTeX characters"
@@ -177,15 +203,15 @@
   ; TODO: convert s to decomplected (generic b/w clj and cljs) reader first?
   (read s))
 
-(defn write-str
-  [bibtex-record & options]
-  (toString bibtex-record (get options :indent "  ")))
-
-(defn write
-  [bibtex-record writer & options]
-  (.write writer (write-str bibtex-record options)))
-
 (defn read-all
   [s]
   (run-seq (item)
            (>> whitespace (eof)) s))
+
+(defn write-str
+  [item writer & options]
+  (toString item options))
+
+(defn write
+  [item writer & options]
+  (.write writer (apply write-str item options)))
