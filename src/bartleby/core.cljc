@@ -14,9 +14,10 @@
   [rdr]
   ; .read: returns "The character read, as an integer [...],
   ; or -1 if the end of the stream has been reached"
-  (let [chr (.read rdr)]
-    (when-not (neg? chr)
-      (cons (char chr) (lazy-seq (char-seq rdr))))))
+  (lazy-seq
+    (let [chr (.read rdr)]
+      (when-not (neg? chr)
+        (cons (char chr) (char-seq rdr))))))
 
 (defn normalize-nfc
   "NFC-normalize the given string"
