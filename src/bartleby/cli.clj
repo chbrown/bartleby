@@ -24,47 +24,53 @@
         items (mapcat #(-> % io/reader core/char-seq bibtex/read-all) bib-filenames)]
     (filter keep? items)))
 
-(defn- write-item
-  [output item]
-  (.write output (str (bibtex/write-str item :trailing-comma? true, :=-padded? true) \newline)))
+(defn- write-items
+  "Write each x in xs to *out*, potentially interspersed by sep,
+  fully evaluate (using doseq), and return nil"
+  [items]
+  (let [options {:trailing-comma? true
+                 :=-padded? true}]
+    (->> items
+         (map #(apply bibtex/write-str % options))
+         (interpose (str \newline))
+         (map #(.write *out* %))
+         (dorun))))
 
-; call run like: (run input output [command options...])
-(defmulti run (fn [_ _ [command & _]] command))
+; call run like: (run input [command options...])
+(defmulti run (fn [_ [command & _]] command))
 (defmethod run "cat"
   ; Parse a stream of BibTeX to structured representation, and then format as standard BibTeX
-  [input output args]
-  (doseq [item (bibtex/read-all input)]
-    (write-item output item)))
+  [input args]
+  (write-items (bibtex/read-all input)))
 (defmethod run "json"
   ; Parse a stream of BibTeX and format as JSON
-  [input output args]
+  [input args]
   (doseq [item (bibtex/read-all input)]
-    (.write output (str (json/write-str (.toJSON item)) \newline))))
+    (.write *out* (str (json/write-str (.toJSON item)) \newline))))
 (defmethod run "json2bib"
   ; Parse JSON-LD and format as standard BibTeX
-  [input output args]
-  (doseq [line (line-seq input)]
-    (->> line
-         (json/read-str)
-         (bibtex/fromJSON)
-         (write-item output))))
+  [input args]
+  (->> (line-seq input)
+       (map json/read-str)
+       (map bibtex/fromJSON)
+       (write-items)))
 (defmethod run "test"
-  [input output args]
+  [input args]
   ; TODO: take filenames, and print the name of each unparseable file to STDERR
-  (.write output (if (core/bibtex? input) "yes\n" "no\n")))
+  (.write *out* (if (core/bibtex? input) "yes\n" "no\n")))
 (defmethod run "select"
-  [_ output args]
-  (doseq [item (select-cited-from-filenames args)]
-    (write-item output item)))
+  ; input is ignored
+  [_ args]
+  (write-items (select-cited-from-filenames args)))
 (defmethod run :default
-  [input output args]
-  (.write output (str "unrecognized arguments: " (apply str args) \newline)))
+  [input args]
+  (.write *out* (str "unrecognized arguments: " (apply str args) \newline)))
 
 (defn -main
   [& args]
   ; *in* returns (LineNumberingPushbackReader. System/in), which is an
   ; io/reader, but io/reader doesn't cut it:
   ; "Don't know how to create ISeq from: java.io.BufferedReader"
-  (run (core/char-seq *in*) *out* args)
+  (run (core/char-seq *in*) args)
   ; weirdly, System/out doesn't always get automatically flushed
   (.flush *out*))
