@@ -83,8 +83,8 @@
 ; recursively handles the contents inside the tex-block as tex
 ; it returns a string with no TeX commands, escapes, or braces.
 (defparser block []
-  (let->> [block-nodes (curly-braced (many (node)))]
-    (always (apply str block-nodes))))
+  (let->> [nodes (curly-braced (many (node)))]
+    (always (apply str nodes))))
 
 ; (node) returns a node from a TeX tree, which are all (potentially recursively)
 ; converted to strings by nested parsers
@@ -103,6 +103,7 @@
 (defn read
   "Take a string of TeX, return a string of TeX"
   [reader]
-  (run (block) reader))
+  (->> (run (many (node)) reader)
+       (apply str)))
 
 (defn read-str [s] (read s))

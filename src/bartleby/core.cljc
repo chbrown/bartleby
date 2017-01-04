@@ -8,6 +8,11 @@
   [m k f & args]
   (if (contains? m k) (apply update m k f args) m))
 
+(defn map-values
+  "contruct a new map with all the values of the given map passed through f"
+  [f kvs]
+  (into {} (for [[k v] kvs] [k (f v)])))
+
 ; based on line-seq from standard library
 (defn char-seq
   "Returns characters from rdr as a lazy sequence of strings."
@@ -28,14 +33,6 @@
 (defn collapse-space
   [s]
   (string/replace s #"\s+" " "))
-
-(defn normalize-bibtex-item
-  [item]
-  ; update :fields if it exists
-  (update-when item :fields
-    (fn [fields]
-      (for [{:keys [key value]} fields]
-        [key (-> value tex/read normalize-nfc collapse-space)]))))
 
 (defn tex->citekeys
   "Extract the citekeys in a TeX document (using regular expressions)"

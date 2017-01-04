@@ -20,7 +20,7 @@
   before formatting multiple fields"
   [indentation =-padding]
   (fn [{:keys [key value]}]
-    (str indentation key =-padding \= =-padding value)))
+    (str indentation key =-padding \= =-padding \{ value \})))
 
 (defrecord Reference [pubtype citekey fields]
   Object
@@ -43,7 +43,8 @@
          \} \newline))
   ToJSON
   (toJSON [this]
-    (into {"pubtype" pubtype, "citekey" citekey} fields)))
+    (let [fields-map (map (fn [{:keys [key value]}] {key value}) fields)]
+      (into {"pubtype" pubtype, "citekey" citekey} fields-map))))
 
 (defrecord Gloss [lines]
   Object
@@ -107,7 +108,7 @@
   enclosed in curly braces"
   []
   (let->> [chunks (many (tex-chunk))]
-    (always (str \{ (apply str chunks) \}))))
+    (always (apply str chunks))))
 
 (defn simple-string
   "Read a simple string literal and convert to TeX syntax"
@@ -118,13 +119,13 @@
           raw (string/replace s #"\\\"" "\"")
           ; escaped braces
           escaped (string/replace raw #"[{}]" "\\\\$0")]
-      (always (str \{ escaped \})))))
+      (always escaped))))
 
 (defn number-literal
   "Consume one or more digits and return a string in TeX syntax (in curly braces)"
   []
   (let->> [chars (many1 (digit))]
-    (always (str \{ (apply str chars) \}))))
+    (always (apply str chars))))
 
 (defn field-value
   "Read the RHS of a field-value field pair, as a string"
