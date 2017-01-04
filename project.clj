@@ -12,6 +12,4 @@
   :profiles {:uberjar {:aot :all}
              :dev {:source-paths ["dev" "test"]
                    :resource-paths ["test/resources"]
-                   :main user
-                   :dependencies [[org.clojure/tools.namespace "0.3.0-alpha3"]]
-                   :repl-options {:init (set! *print-length* 50)}}})
+                   :main user}})
