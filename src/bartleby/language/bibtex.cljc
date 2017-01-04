@@ -28,16 +28,18 @@
   Formattable
   (toString [this {:keys [indentation
                           trailing-comma?
+                          trailing-newline?
                           =-padded?]
                    :or   {indentation    "  "
                           trailing-comma? true
+                          trailing-newline? true
                           =-padded?       true}}]
     ; omit citekey (and the comma after) if citekey is nil
     (str \@ pubtype \{ (some-> citekey (str \,)) \newline
          (->> fields
               (map (field-formatter indentation (when =-padded? \space)))
               (string/join (str \, \newline)))
-         (when trailing-comma? \,) \newline
+         (when trailing-comma? \,) (when trailing-newline? \newline)
          \} \newline))
   ToJSON
   (toJSON [this]

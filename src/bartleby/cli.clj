@@ -29,6 +29,7 @@
   fully evaluate (using doseq), and return nil"
   [items]
   (let [options {:trailing-comma? true
+                 :trailing-newline? true
                  :=-padded? true}]
     (->> items
          (map #(apply bibtex/write-str % options))
