@@ -51,7 +51,9 @@
 (defn aux->citekeys
   "Extract the citekeys in an aux document (using regular expressions)"
   [s]
-  (map second (re-seq #"\\abx@aux@cite\{([^}]+)\}" s)))
+  ; BibLaTeX uses \abx@aux@cite{...}, BibTeX uses \bibcite{...}; we find either one:
+  (for [[_ command citekey] (re-seq #"\\(abx@aux@cite|bibcite)\{([^}]+)\}" s)]
+    citekey))
 
 (defn bibtex?
   "Test that the given stream can be parsed as BibTeX"
