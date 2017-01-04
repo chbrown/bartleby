@@ -22,6 +22,21 @@ Delete .bib file entries not used in LaTeX document:
     bart select {paper.aux,research.bib} | sponge research.bib
 
 
+## Alternatives
+
+* [`bibexport`](https://www.ctan.org/tex-archive/biblio/bibtex/utils/bibexport/)
+  - Cleverly uses the BibTeX compiler and a special `export.bst` style file to render BibTeX natively.
+  - But it is not very faithful:
+    + Unrecognized fields (those outside the standard 22 + 7 special names hard-coded into `export.bst`) are deleted
+    + Comments are deleted
+    + All fields are ordered alphabetically
+    + All entries are ordered by first appearance in the document / `.aux` file
+  - And the output format is not customizable (unless you modify the `export.bst` file):
+    + All case-insensitive keywords (pubtype and field keys) are lowercased
+    + All fields keys are indented with two spaces, and the field values are all aligned at column 19
+    + Lines are wrapped at 78 characters
+
+
 ## References
 
 * Interesting blog post on writing parsers in Clojure with monads at <http://albert.rierol.net/clojure-monads.html>, with code at <https://gist.github.com/acardona/3672948>
