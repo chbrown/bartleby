@@ -1,4 +1,4 @@
-(ns bartleby.test
+(ns bartleby.test.bibtex
   (:require [clojure.test :refer :all]
             [clojure.java.io :as io]
             [clojure.string :as string]
@@ -10,7 +10,7 @@
 
 (defn- normalize-value
   [value]
-  (some-> value tex/read core/normalize-nfc core/collapse-space))
+  (some-> value tex/read-str core/normalize-nfc core/collapse-space))
 
 (defn- normalize-json
   [obj]
