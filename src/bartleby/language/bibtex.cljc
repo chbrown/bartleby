@@ -59,7 +59,11 @@
   [object]
   (if (contains? object "pubtype")
     ; (map->Reference object)
-    (Reference. (get object "pubtype") (get object "citekey") (dissoc object "pubtype" "citekey"))
+    (let [pubtype (get object "pubtype")
+          citekey (get object "citekey")
+          fields-map (dissoc object "pubtype" "citekey")
+          fields (map (fn [[key value]] (Field. key value)) fields-map)]
+      (Reference. pubtype citekey fields))
     ; (map->Gloss object)
     (Gloss. (get object "lines"))))
 
