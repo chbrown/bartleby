@@ -32,7 +32,7 @@
                  :trailing-newline? true
                  :=-padded? true}]
     (->> items
-         (map #(apply bibtex/write-str % options))
+         (map #(bibtex/write-str % options))
          (interpose (str \newline))
          (map #(.write *out* %))
          (dorun))))

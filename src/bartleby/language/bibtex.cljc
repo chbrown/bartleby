@@ -211,9 +211,11 @@
            (>> whitespace (eof)) s))
 
 (defn write-str
-  [item & options]
-  (toString item (apply hash-map options)))
+  ([item] (write-str item {}))
+  ([item options]
+    (toString item options)))
 
 (defn write
-  [item writer & options]
-  (.write writer (apply write-str item options)))
+  ([item writer] (write item writer {}))
+  ([item writer options]
+    (.write writer (write-str item options))))
