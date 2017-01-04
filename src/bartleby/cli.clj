@@ -16,12 +16,12 @@
 (defn- select-cited-from-filenames
   "Select only the cited entries from a bibliography, given a list of .tex and .bib files"
   [filenames]
-  (let [citekeys (mapcat filename->citekeys filenames)
-        citekeys-set (set citekeys)
+  (let [bib-filenames (filter #(string/ends-with? % ".bib") filenames)
+        items (mapcat #(-> % io/reader core/char-seq bibtex/read-all) bib-filenames)
+        direct-citekeys (mapcat filename->citekeys filenames)
+        citekeys (core/expand-citekeys items direct-citekeys)
         ; only keep items that are references that have been cited, or are not references
-        keep? (fn [item] (or (nil? (:citekey item)) (contains? citekeys-set (:citekey item))))
-        bib-filenames (filter #(string/ends-with? % ".bib") filenames)
-        items (mapcat #(-> % io/reader core/char-seq bibtex/read-all) bib-filenames)]
+        keep? (fn [item] (or (nil? (:citekey item)) (contains? citekeys (:citekey item))))]
     (filter keep? items)))
 
 (defn- write-items

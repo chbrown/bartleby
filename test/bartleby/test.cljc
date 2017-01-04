@@ -4,7 +4,8 @@
             [clojure.string :as string]
             [clojure.data.json :as json]
             [bartleby.language.bibtex :as bibtex]
-            [bartleby.core :as core]))
+            [bartleby.core :as core])
+  (:import [bartleby.language.bibtex Reference Field]))
 
 (def bibfiles (->> (io/resource "resources")
                    (io/file)
@@ -21,3 +22,10 @@
             expected (-> jsonfile io/resource slurp json/read-str)]
         ; clojure.test doesn't care about order but (= expected actual) is how humane-test-output reads it
         (is (= expected actual))))))
+
+(deftest test-expand-citekeys
+  (let [items [(Reference. "incollection" "zara" [(Field. "title" "Unrelated")])
+               (Reference. "incollection" "adams" [(Field. "crossref" "benjamin")])
+               (Reference. "book" "benjamin" [(Field. "title" "Related")])]
+        expanded-citekeys (core/expand-citekeys items ["adams"])]
+    (is (= #{"adams" "benjamin"} expanded-citekeys))))
