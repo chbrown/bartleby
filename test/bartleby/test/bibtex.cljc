@@ -6,7 +6,7 @@
             [bartleby.language.tex :as tex]
             [bartleby.language.bibtex :as bibtex]
             [bartleby.core :as core])
-  (:import [bartleby.language.bibtex Reference Field]))
+  (:import [bartleby.language.bibtex Field Reference Gloss]))
 
 (defn- normalize-value
   [value]
@@ -38,3 +38,27 @@
                (Reference. "book" "benjamin" [(Field. "title" "Related")])]
         expanded-citekeys (core/expand-citekeys items ["adams"])]
     (is (= #{"adams" "benjamin"} expanded-citekeys))))
+
+(deftest test-fromJSON
+  (testing "parsing Gloss"
+    (let [actual (-> {"lines" ["1" "2"]} bibtex/fromJSON)
+          expected (Gloss. ["1" "2"])]
+      (is (= expected actual))))
+  (testing "parsing Reference"
+    (let [actual (-> {"pubtype" "book", "citekey" "benjamin", "title" "Reason"} bibtex/fromJSON)
+          expected (Reference. "book" "benjamin" [(Field. "title" "Reason")])]
+      (is (= expected actual)))))
+
+(deftest test-write-str
+  (testing "rendering Gloss"
+    (let [actual (-> (Gloss. ["1" "2"]) bibtex/write-str)
+          expected "1\n2"]
+      (is (= expected actual))))
+  (testing "rendering Reference"
+    (let [actual (-> (Reference. "book" "benjamin" [(Field. "title" "Reason")]) bibtex/write-str)
+          expected "@book{benjamin,\n  title = {Reason},\n}\n"]
+      (is (= expected actual))))
+  (testing "rendering Reference without citeky"
+    (let [actual (-> (Reference. "book" nil [(Field. "title" "Apparent")]) bibtex/write-str)
+          expected "@book{\n  title = {Apparent},\n}\n"]
+      (is (= expected actual)))))
