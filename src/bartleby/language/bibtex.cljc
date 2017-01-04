@@ -48,10 +48,10 @@
 
 (defrecord Gloss [lines]
   Object
-  (toString [this]
-    (string/join \newline lines))
+  (toString [this] (toString this nil))
   Formattable
-  (toString [this _] (toString this))
+  (toString [this _]
+    (string/join \newline lines))
   ToJSON
   (toJSON [this]
     {"lines" lines}))
