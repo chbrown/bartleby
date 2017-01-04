@@ -11,6 +11,17 @@ A very _faithful_ BibTeX parser.
 - Implements various levels of cleaning up / standardization beyond whitespace
 
 
+## Recipes
+
+Reformat a single .bib file, in-place:
+
+    bart cat <research.bib | sponge research.bib
+
+Delete .bib file entries not used in LaTeX document:
+
+    bart select {paper.aux,research.bib} | sponge research.bib
+
+
 ## References
 
 * Interesting blog post on writing parsers in Clojure with monads at <http://albert.rierol.net/clojure-monads.html>, with code at <https://gist.github.com/acardona/3672948>
