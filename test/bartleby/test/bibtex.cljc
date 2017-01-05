@@ -63,3 +63,11 @@
     (let [actual (-> (Reference. "book" nil [(Field. "title" "Apparent")]) bibtex/write-str)
           expected "@book{\n  title = {Apparent},\n}\n"]
       (is (= expected actual)))))
+
+(deftest test-examples
+  (testing "multi"
+    (let [filename "examples/multi/paper.bib"
+          input (-> filename io/resource io/reader core/char-seq)
+          items (bibtex/read-all input)]
+      (is (= 4 (count items)))
+      (is (= "J93-2004" (-> items (nth 2) :citekey))))))
