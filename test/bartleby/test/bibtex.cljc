@@ -16,14 +16,15 @@
   [obj]
   (core/map-values normalize-value obj))
 
-(def bibfiles (->> (io/resource "resources")
-                   (io/file)
-                   (.list)
-                   (filter #(string/ends-with? % ".bib"))
-                   (remove #(string/includes? % "with-strings"))))
+(def pairs-bibfiles (->> (io/resource "resources/pairs")
+                         (io/file)
+                         (.list)
+                         (filter #(string/ends-with? % ".bib"))
+                         (remove #(string/includes? % "with-strings"))
+                         (map #(str "pairs/" %))))
 
 (deftest test-bibtex-parser
-  (doseq [bibfile bibfiles]
+  (doseq [bibfile pairs-bibfiles]
     (testing (str "parsing " bibfile " into json equivalent")
       (let [jsonfile (string/replace bibfile ".bib" ".json")
             ; is io/resource utf-8 by default?
