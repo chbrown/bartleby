@@ -3,11 +3,6 @@
             [bartleby.language.bibtex :as bibtex]
             [bartleby.language.tex :as tex]))
 
-(defn update-when
-  "Like update but only calls f if m contains k"
-  [m k f & args]
-  (if (contains? m k) (apply update m k f args) m))
-
 (defn map-values
   "contruct a new map with all the values of the given map passed through f"
   [f kvs]
