@@ -11,6 +11,16 @@
   (condp #(string/ends-with? %2 %1) filename
     ".tex" (-> filename slurp core/tex->citekeys)
     ".aux" (-> filename slurp core/aux->citekeys)
+(def ^:private properties
+  (with-open [reader (-> "META-INF/maven/bartleby/bartleby/pom.properties"
+                         io/resource
+                         io/reader)]
+    (into {} (doto (java.util.Properties.)
+                   (.load reader)))))
+
+(def ^:private version
+  (get properties "version"))
+
     []))
 
 (defn- select-cited-from-filenames
