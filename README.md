@@ -10,6 +10,11 @@ A very _faithful_ BibTeX parser.
   * Whitespace outside values is always standardized
 - Implements various levels of cleaning up / standardization beyond whitespace
 
+## Install as binary
+
+    lein bin
+    cp $(find target -type f -perm +111) /usr/local/bin/bart
+
 
 ## Recipes
 
