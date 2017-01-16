@@ -45,16 +45,6 @@
         keep? (fn [item] (or (nil? (:citekey item)) (contains? citekeys (:citekey item))))]
     (filter keep? items)))
 
-; (defn- write-items
-;   "Write each x in xs to *out*, potentially interspersed by sep,
-;   fully evaluate (using dorun), and return nil"
-;   [items options]
-;   (->> items
-;        (map #(bibtex/write-str % options))
-;        (interpose (str \newline))
-;        (map #(.write *out* %))
-;        (dorun)))
-
 (defn cat-command
   "Parse the input BibTeX file(s) and reformat as a stream of BibTeX, with minimal changes"
   [inputs options]
