@@ -3,6 +3,7 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.data.json :as json]
+            [the.parsatron :refer [run]]
             [bartleby.language.tex :as tex]
             [bartleby.language.bibtex :as bibtex]
             [bartleby.core :as core])
@@ -71,3 +72,15 @@
           items (bibtex/read-all input)]
       (is (= 4 (count items)))
       (is (= "J93-2004" (-> items (nth 2) :citekey))))))
+
+(deftest test-field-value-parser
+  (testing "hard-casing block"
+    (let [input "{{MALLET}: A Machine Learning for Language Toolkit}"
+          actual (run (bibtex/field-value) input)
+          expected "{MALLET}: A Machine Learning for Language Toolkit"]
+      (is (= expected actual))))
+  (testing "command blocks"
+    (let [input "{Putting the \\textbf{Par} back in \\emph{\\textbf{Par}}sing}"
+          actual (run (bibtex/field-value) input)
+          expected "Putting the \\textbf{Par} back in \\emph{\\textbf{Par}}sing"]
+      (is (= expected actual)))))

@@ -108,6 +108,13 @@
   enclosed in curly braces"
   []
   (let->> [chunks (many (tex-chunk))]
+    (always (str \{ (apply str chunks) \}))))
+
+(defn outer-tex-block
+  "Reads a block of TeX syntax, recursively, and returns a single string"
+  []
+  (let->> [chunks (many (tex-chunk))]
+    ; the root block gets special treatment to avoid the outermost braces
     (always (apply str chunks))))
 
 (defn simple-string
@@ -131,7 +138,7 @@
   "Read the RHS of a field-value field pair, as a string"
   []
   ; should this handle whitespace, or should the field parser (as is currently the case)?
-  (choice (curly-braced (tex-block))
+  (choice (curly-braced (outer-tex-block))
           (double-quoted (simple-string))
           ; TODO: handle string variable references
           (number-literal)))
