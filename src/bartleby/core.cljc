@@ -1,4 +1,5 @@
 (ns bartleby.core
+  (:refer-clojure :exclude [read])
   (:require [clojure.string :as string]
             [bartleby.language.bibtex :as bibtex]
             [bartleby.language.tex :as tex]))
@@ -7,6 +8,11 @@
   "contruct a new map with all the values of the given map passed through f"
   [f kvs]
   (into {} (for [[k v] kvs] [k (f v)])))
+
+(defprotocol ReadableFile
+  "general representation of a readable resource carrying a filename"
+  (getName [this] "get the name of the file backing this resource")
+  (read [this] "read a single character"))
 
 ; based on line-seq from standard library
 (defn char-seq
