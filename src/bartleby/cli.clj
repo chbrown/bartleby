@@ -134,6 +134,9 @@ Commands:
 %s
 ")
 
+(defn- exit! [code]
+  (System/exit code))
+
 (defn -main
   [& argv]
   (let [{:keys [options arguments errors summary] :as opts} (parse-opts argv cli-options)
@@ -143,26 +146,26 @@ Commands:
         command-fn (get commands (keyword command))]
     (cond
       (:help options) (do (println usage)
-                          (System/exit 0))
+                          (exit! 0))
       (:version options) (do (println "bartleby" version)
-                             (System/exit 0))
+                             (exit! 0))
       (nil? command) (do (println usage)
                          (println "ArgumentError: you must supply a command")
-                         (System/exit 1))
+                         (exit! 1))
       (nil? command-fn) (do (println usage)
                             (println (str "ArgumentError: unrecognized command '" command "'"))
-                            (System/exit 1))
+                            (exit! 1))
       errors (do (println "Argument Error:" (string/join \newline errors))
-                 (System/exit 1)))
-    (let [arg-inputs (map file-reader args)
-          ; TODO: test for stdin-as-TTY better, e.g., http://stackoverflow.com/a/41576107
-          stdin-is-tty? (.ready *in*)
-          inputs (if stdin-is-tty?
-                   (conj (BufferedFileReader. "/dev/stdin" *in*) arg-inputs)
-                   arg-inputs)]
-      (->> (command-fn inputs options)
-           (interpose (str \newline))
-           (map #(.write *out* %))
-           (dorun)))
+                 (exit! 1))
+      :default (let [arg-inputs (map file-reader args)
+                     ; TODO: test for stdin-as-TTY better, e.g., http://stackoverflow.com/a/41576107
+                     stdin-is-tty? (.ready *in*)
+                     inputs (if stdin-is-tty?
+                              (conj (BufferedFileReader. "/dev/stdin" *in*) arg-inputs)
+                              arg-inputs)]
+                 (->> (command-fn inputs options)
+                      (interpose (str \newline))
+                      (map #(.write *out* %))
+                      (dorun))))
     ; weirdly, System/out doesn't always get automatically flushed
     (.flush *out*)))
