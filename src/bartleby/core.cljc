@@ -42,9 +42,11 @@
   ; re-seq returns a sequence of vectors, each N-groups long. We want the second group (the first captured group).
   ; the (apply concat ...) flattens the results
   ; TODO: find out if there's a better (for-cat [binding] ...) idiom in the std lib?
-  (apply concat (for [[_ citekey-csv] (re-seq #"\\\w*cite\w*\{([^}]+)\}" s)]
-                  ; split each csv multicite \*cite*{albert:1995,brumhilda:1990,etc} into its component parts
-                  (string/split citekey-csv #","))))
+  (->> (for [[_ citekey-csv] (re-seq #"\\\w*cite\w*\{([^}]+)\}" s)]
+         ; split each csv multicite \*cite*{albert:1995,brumhilda:1990,etc} into its component parts
+         (string/split citekey-csv #","))
+       (apply concat)
+       (map string/trim)))
 
 (defn aux->citekeys
   "Extract the citekeys in an aux document (using regular expressions)"
