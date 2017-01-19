@@ -12,7 +12,9 @@
 
 (deftest test-select
   (let [command-fn (:select cli/commands)
-        filenames ["examples/multi/paper.bib" "examples/multi/paper.aux"]
+        filenames ["examples/multi/paper.bib"
+                   "examples/multi/paper.aux"
+                   "examples/multi/paper.tex"]
         inputs (map #(-> % io/resource cli/file-reader) filenames)
         items (command-fn inputs {})]
     (is (= 2 (count items)))))
