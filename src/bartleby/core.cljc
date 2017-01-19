@@ -59,8 +59,10 @@
   "Test that the given stream can be parsed as BibTeX"
   [input]
   (try
-    (dorun (bibtex/read-all input))
-    true
+    ; parse the input char-seq, non-lazily, to catch any potential errors
+    (let [items (-> input bibtex/read-all doall)]
+      ; it's not "BibTeX" if the only items are Gloss instances
+      (some? (seq (remove :lines items))))
     (catch Exception e false)))
 
 (defn expand-citekeys
