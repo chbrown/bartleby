@@ -81,6 +81,7 @@
   [inputs options]
   ; TODO: take filenames, and print the name of each unparseable file to STDERR
   (->> inputs
+       (map core/char-seq)
        (map #(if (core/bibtex? %) "yes" "no"))))
 
 ; each command should take (inputs options) and return a seq of lines
