@@ -1,6 +1,7 @@
 (ns bartleby.test.cli
   (:require [clojure.test :refer :all]
             [clojure.java.io :as io]
+            [clojure.string :as string]
             [bartleby.cli :as cli]))
 
 (deftest test-cat
@@ -15,3 +16,10 @@
         inputs (map #(-> % io/resource cli/file-reader) filenames)
         items (command-fn inputs {})]
     (is (= 2 (count items)))))
+
+(deftest test-json
+  (let [command-fn (:json cli/commands)
+        inputs (-> "examples/multi/paper.bib" io/resource io/reader list)
+        items (command-fn inputs {})]
+    (is (= 4 (count items)))
+    (is (every? #(string/starts-with? % "{") items))))
