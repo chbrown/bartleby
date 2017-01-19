@@ -90,3 +90,9 @@
 (deftest test-failure
   (testing "bad syntax"
     (is (not (core/bibtex? "@ :( sorry!")))))
+
+(deftest test-citekeys
+  (testing "extraction from aux"
+    (let [actual (-> "examples/multi/paper.aux" io/resource slurp core/aux->citekeys)
+          expected ["J93-2004" "papineni-EtAl:2002:ACL"]]
+      (is (= expected actual)))))
