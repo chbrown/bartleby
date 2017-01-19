@@ -4,6 +4,24 @@
             [clojure.string :as string]
             [bartleby.cli :as cli]))
 
+(deftest test-main
+  (with-redefs [cli/exit! identity]
+    (testing "help"
+      (let [output (with-out-str (cli/-main "--help"))]
+        (is (string/includes? output "Usage: bart"))))
+    (testing "version"
+      (let [output (with-out-str (cli/-main "--version"))]
+        (is (string/starts-with? output "bartleby "))
+        (is (not (string/includes? output "Usage")))))
+    (testing "no args"
+      (let [output (with-out-str (cli/-main))]
+        (is (string/includes? output "Usage: bart"))
+        (is (string/includes? output "must supply a command"))))
+    (testing "bad command"
+      (let [output (with-out-str (cli/-main "magic-fix"))]
+        (is (string/includes? output "Usage: bart"))
+        (is (string/includes? output "unrecognized command 'magic-fix'"))))))
+
 (deftest test-cat
   (let [command-fn (:cat cli/commands)
         inputs (-> "examples/multi/paper.bib" io/resource io/reader list)
