@@ -82,3 +82,66 @@
       ; if there are new citekeys in crossref-citekeys, recurse.
       ; there should only be one level of crossrefs, maybe two; more than that is pathological
       (expand-citekeys items all-citekeys))))
+
+
+(defn reorder-name
+  "standardize name parts from an single BibTeX chunk of a list of authors"
+  [s]
+  (let [parts (string/split s #"," 2) ; handle comma-separated names
+        recombined (string/join \space (reverse parts))] ; no-op if there was no comma
+    (string/split recombined #"\s+")))
+
+(defn author->lastnames
+  "get last names from BibTeX format"
+  [author-value]
+  (->> (string/split author-value #"\s+and\s+")
+       (map reorder-name)
+       (map last)))
+
+(defn format-names
+  "join a seq of (last-)names as it would normally be formatted"
+  [names]
+  ; [A] -> 'A'
+  ; [A, B] -> 'A and B'
+  ; [A, B, C] -> 'A, B and C' (no Oxford comma)
+  (string/join " and "
+    (if (> (count names) 2)
+      ; group 1: take all but the last name, join those elements with a comma
+      ; group 2: simply take the last name
+      [(string/join ", " (butlast names)) (last names)]
+      names)))
+
+(defn reference->replacements
+  [{:keys [citekey fields]}]
+  (let [author (->> fields (filter #(= (:key %) "author")) first :value author->lastnames format-names)
+        year (->> fields (filter #(= (:key %) "year")) first :value)]
+    ; priority is so that greedier replacements happen first
+    ; too ambiguous:
+    ; {:match author
+    ;  :output (format "\\citeauthor{%s}" citekey)
+    ;  :priority 0}
+    [{:match (format "%s %s" author year)
+      :output (format "\\citealt{%s}" citekey)
+      :priority 10}
+     {:match (format "%s (%s)" author year)
+      :output (format "\\citet{%s}" citekey)
+      :priority 50}
+     {:match (format "(%s %s)" author year)
+      :output (format "\\citep{%s}" citekey)
+      :priority 100}]))
+
+(defn re-escape [s] (string/replace s #"([.*+?^=!:${}()|[\\]/\\])" "\\\\$1"))
+
+(defn interpolate
+  "replace literal names (plaintext citations) with TeX cite commands for recognized names"
+  ; also need to support:
+  ;   oxford commas
+  ;   '&' as author separator instead of 'and'
+  ;   et. al instead of all authors listed out
+  [tex-string references]
+  (let [replacements (sort-by :priority (mapcat reference->replacements references))
+        matches (map :match replacements)
+        all-matches-pattern (re-pattern (string/join \| (map re-escape matches)))]
+    (string/replace tex-string all-matches-pattern
+      (fn [group0]
+        (get (->> replacements (filter #(= (:match %) group0)) first) :output (str "no output found for '" group0 "'"))))))
