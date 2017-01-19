@@ -66,12 +66,14 @@
       (is (= expected actual)))))
 
 (deftest test-examples
-  (testing "multi"
-    (let [filename "examples/multi/paper.bib"
-          input (-> filename io/resource io/reader core/char-seq)
-          items (bibtex/read-all input)]
-      (is (= 4 (count items)))
-      (is (= "J93-2004" (-> items (nth 2) :citekey))))))
+  (let [filename "examples/multi/paper.bib"
+        input (-> filename io/resource io/reader core/char-seq)]
+    (testing "multi syntax"
+      (is (core/bibtex? input)))
+    (testing "multi"
+      (let [items (bibtex/read-all input)]
+        (is (= 4 (count items)))
+        (is (= "J93-2004" (-> items (nth 2) :citekey)))))))
 
 (deftest test-field-value-parser
   (testing "hard-casing block"
@@ -84,3 +86,7 @@
           actual (run (bibtex/field-value) input)
           expected "Putting the \\textbf{Par} back in \\emph{\\textbf{Par}}sing"]
       (is (= expected actual)))))
+
+(deftest test-failure
+  (testing "bad syntax"
+    (is (not (core/bibtex? "@ :( sorry!")))))
