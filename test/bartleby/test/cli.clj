@@ -23,3 +23,11 @@
         items (command-fn inputs {})]
     (is (= 4 (count items)))
     (is (every? #(string/starts-with? % "{") items))))
+
+(deftest test-test
+  (let [command-fn (:test cli/commands)
+        filenames ["examples/multi/paper.bib" "examples/multi/paper.aux"]
+        inputs (map #(-> % io/resource cli/file-reader) filenames)
+        [bib-line aux-line] (command-fn inputs {})]
+    (is (= "yes" bib-line))
+    (is (= "no" aux-line))))
