@@ -10,6 +10,8 @@
   :plugins [; have to include lein-cloverage here for Travis CI
             [lein-cloverage "1.0.9"]]
   :main bartleby.cli
+  :deploy-repositories [["releases" {:url "https://clojars.org/repo"
+                                     :sign-releases false}]]
   :profiles {:uberjar {:aot :all}
              :dev {:source-paths ["dev" "test"]
                    :resource-paths ["test/resources"]
