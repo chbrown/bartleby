@@ -144,4 +144,4 @@ You forgot to wrap the vector you're trying to return from your `(defparser ...)
 
 ## License
 
-Copyright © 2016 Christopher Brown. [MIT Licensed](https://chbrown.github.io/licenses/MIT/#2016).
+Copyright © 2016-2017 Christopher Brown. [MIT Licensed](https://chbrown.github.io/licenses/MIT/#2016-2017).

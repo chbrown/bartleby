@@ -1,8 +1,8 @@
-(defproject bartleby "0.2.2-SNAPSHOT"
+(defproject bartleby/bartleby "0.2.2"
   :description "Faithful (Bib)TeX manipulation"
   :url "https://github.com/chbrown/bartleby"
   :license {:name "MIT"
-            :url "https://chbrown.github.io/licenses/MIT/#2016"}
+            :url "https://chbrown.github.io/licenses/MIT/#2016-2017"}
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/tools.cli "0.3.5"]
