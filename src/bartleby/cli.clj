@@ -23,7 +23,7 @@
   (getName [this] name)
   (read [this] (.read reader)))
 
-(defn- file-reader
+(defn file-reader
   [name]
   (BufferedFileReader. name (io/reader name)))
 
