@@ -51,26 +51,22 @@
   (->> inputs
        (map core/char-seq)
        (mapcat bibtex/read-all)
-       (map #(bibtex/write-str % options))
-       (interpose (str \newline))
-       (map #(.write *out* %))
-       (dorun)))
+       (map #(bibtex/write-str % options))))
 
 (defn select-command
   "Filter out unused entries, given one or more .bib files and one or more .aux/.tex files"
   [inputs options]
   (->> inputs
        (select-cited-from-inputs)
-       (map #(bibtex/write-str % options))
-       (interpose (str \newline))
-       (map #(.write *out* %))
-       (dorun)))
+       (map #(bibtex/write-str % options))))
 
 (defn json-command
   "Parse BibTeX and output each component as JSON"
   [inputs options]
-  (doseq [item (mapcat bibtex/read-all inputs)]
-    (.write *out* (str (json/write-str (.toJSON item)) \newline))))
+  (->> inputs
+       (map core/char-seq)
+       (mapcat bibtex/read-all)
+       (map #(json/write-str (.toJSON %)))))
 
 (defn json2bib-command
   "Parse JSON-LD and output as standard formatted BibTeX"
@@ -78,17 +74,16 @@
   (->> (line-seq inputs)
        (map json/read-str)
        (map bibtex/fromJSON)
-       (map #(bibtex/write-str % options))
-       (interpose (str \newline))
-       (map #(.write *out* %))
-       (dorun)))
+       (map #(bibtex/write-str % options))))
 
 (defn test-command
   "Test each file in args and output the ones that are not valid BibTeX"
   [inputs options]
   ; TODO: take filenames, and print the name of each unparseable file to STDERR
-  (.write *out* (if (core/bibtex? inputs) "yes\n" "no\n")))
+  (->> inputs
+       (map #(if (core/bibtex? %) "yes" "no"))))
 
+; each command should take (inputs options) and return a seq of lines
 ; the #' reader macro enables access to the function's metadata later
 ; but doesn't prevent us from calling the function directly as usual
 (def commands {:cat #'cat-command
@@ -164,6 +159,9 @@ Commands:
           inputs (if stdin-is-tty?
                    (conj (BufferedFileReader. "/dev/stdin" *in*) arg-inputs)
                    arg-inputs)]
-      (command-fn inputs options))
+      (->> (command-fn inputs options)
+           (interpose (str \newline))
+           (map #(.write *out* %))
+           (dorun)))
     ; weirdly, System/out doesn't always get automatically flushed
     (.flush *out*)))
