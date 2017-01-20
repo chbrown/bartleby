@@ -27,18 +27,22 @@
   [name]
   (BufferedFileReader. name (io/reader name)))
 
+(defn- input->items
+  [{:keys [name reader]}]
+  (when (string/ends-with? name ".bib")
+    (-> reader core/char-seq bibtex/read-all)))
+
 (defn- input->citekeys
-  [input]
-  (condp #(string/ends-with? %2 %1) (:name input)
-    ".tex" (-> input :reader slurp core/tex->citekeys)
-    ".aux" (-> input :reader slurp core/aux->citekeys)
-    []))
+  [{:keys [name reader]}]
+  (cond
+    (string/ends-with? name ".tex") (-> reader slurp core/tex->citekeys)
+    (string/ends-with? name ".aux") (-> reader slurp core/aux->citekeys)
+    :default []))
 
 (defn- select-cited-from-inputs
   "Select only the cited entries from a bibliography, given a list of .tex and .bib files"
   [inputs]
-  (let [bib-inputs (filter #(-> % :name (string/ends-with? ".bib")) inputs)
-        items (mapcat #(-> % core/char-seq bibtex/read-all) bib-inputs)
+  (let [items (mapcat input->items inputs)
         direct-citekeys (mapcat input->citekeys inputs)
         citekeys (core/expand-citekeys items direct-citekeys)
         ; only keep items that are references that have been cited, or are not references
@@ -84,11 +88,24 @@
        (map core/char-seq)
        (map #(if (core/bibtex? %) "yes" "no"))))
 
+(defn interpolate-command
+  "Replace literal names with cite commands, given .tex and .bib file(s)"
+  [inputs options]
+  (let [input-tex? (fn [{:keys [name reader]}] (or (= name "/dev/stdin") (string/ends-with? name ".tex")))
+        items (mapcat input->items inputs)
+        references (filter :citekey items)]
+    (->> inputs
+         (filter input-tex?)
+         (map :reader)
+         (map slurp)
+         (map #(core/interpolate % references)))))
+
 ; each command should take (inputs options) and return a seq of lines
 ; the #' reader macro enables access to the function's metadata later
 ; but doesn't prevent us from calling the function directly as usual
 (def commands {:cat #'cat-command
                :select #'select-command
+               :interpolate #'interpolate-command
                :json #'json-command
                :json2bib #'json2bib-command
                :test #'test-command})
