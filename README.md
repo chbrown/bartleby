@@ -15,7 +15,8 @@ A very _faithful_ BibTeX parser.
 
 1. Go to [releases](https://github.com/chbrown/bartleby/releases) and download the top (latest) <code>bartleby-<em>x.y.z</em>-standalone.jar</code>
 2. Ensure you have `java` installed (`java -version` should print out your version)
-3. In your shell, run `java -jar bartleby-0.3.0-standalone.jar --help`, which will print out a help message describing all command line functionality
+3. In your shell, run `java -jar bartleby-*.jar --help`, which will print out a help message describing all command line functionality.
+  * For example, `java -jar bartleby-*.jar cat my.bib their.bib` will read each of `my.bib` and `their.bib` and print the formatted BibTeX to `stdout` in that order.
 
 
 ## Compile and install as binary
