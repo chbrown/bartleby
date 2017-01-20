@@ -85,7 +85,7 @@
 
 
 (defn reorder-name
-  "standardize name parts from an single BibTeX chunk of a list of authors"
+  "standardize name parts from a single BibTeX chunk of a list of authors"
   [s]
   (let [parts (string/split s #"," 2) ; handle comma-separated names
         recombined (string/join \space (reverse parts))] ; no-op if there was no comma
@@ -113,22 +113,23 @@
 
 (defn reference->replacements
   [{:keys [citekey fields]}]
-  (let [author (->> fields (filter #(= (:key %) "author")) first :value author->lastnames format-names)
+  (let [author (some->> fields (filter #(= (:key %) "author")) first :value author->lastnames format-names)
         year (->> fields (filter #(= (:key %) "year")) first :value)]
-    ; priority is so that greedier replacements happen first
-    ; too ambiguous:
-    ; {:match author
-    ;  :output (format "\\citeauthor{%s}" citekey)
-    ;  :priority 0}
-    [{:match (format "%s %s" author year)
-      :output (format "\\citealt{%s}" citekey)
-      :priority 10}
-     {:match (format "%s (%s)" author year)
-      :output (format "\\citet{%s}" citekey)
-      :priority 50}
-     {:match (format "(%s %s)" author year)
-      :output (format "\\citep{%s}" citekey)
-      :priority 100}]))
+    (when (and author year)
+      ; priority is so that greedier replacements happen first
+      ; too ambiguous:
+      ; {:match names
+      ;  :output (format "\\citeauthor{%s}" citekey)
+      ;  :priority 0}
+      [{:match (format "%s %s" author year)
+        :output (format "\\citealt{%s}" citekey)
+        :priority 10}
+       {:match (format "%s (%s)" author year)
+        :output (format "\\citet{%s}" citekey)
+        :priority 50}
+       {:match (format "(%s %s)" author year)
+        :output (format "\\citep{%s}" citekey)
+        :priority 100}])))
 
 (defn re-escape [s] (string/replace s #"([.*+?^=!:${}()|[\\]/\\])" "\\\\$1"))
 
