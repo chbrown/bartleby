@@ -1,4 +1,4 @@
-(defproject bartleby/bartleby "0.2.2"
+(defproject bartleby/bartleby "0.3.0"
   :description "Faithful (Bib)TeX manipulation"
   :url "https://github.com/chbrown/bartleby"
   :license {:name "MIT"
