@@ -10,7 +10,15 @@ A very _faithful_ BibTeX parser.
   * Whitespace outside values is always standardized
 - Implements various levels of cleaning up / standardization beyond whitespace
 
-## Install as binary
+
+## Use as jar
+
+1. Go to [releases](https://github.com/chbrown/bartleby/releases) and download the top (latest) <code>bartleby-<em>x.y.z</em>-standalone.jar</code>
+2. Ensure you have `java` installed (`java -version` should print out your version)
+3. In your shell, run `java -jar bartleby-0.3.0-standalone.jar --help`, which will print out a help message describing all command line functionality
+
+
+## Compile and install as binary
 
     lein bin
     cp $(find target -type f -perm +111) /usr/local/bin/bart
