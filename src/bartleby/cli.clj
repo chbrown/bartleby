@@ -137,6 +137,13 @@
    [nil "--no-padding" "Omit space padding around '=' field separator"
     :id :=-padded?
     :parse-fn not]
+   [nil "--remove-field KEY" "Omit fields from output (case-insensitively); this argument can be repeated"
+    :id :remove-fields
+    :default #{}
+    ; downcase (and split on ",", which is not documented for now)
+    :parse-fn #(-> % string/lower-case (string/split #","))
+    ; support multiple applications
+    :assoc-fn (fn [m k v] (update m k into v))]
    ["-h" "--help"]
    ["-v" "--version"]])
 

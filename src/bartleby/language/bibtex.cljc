@@ -26,17 +26,20 @@
   Object
   (toString [this] (toString this {}))
   Formattable
-  (toString [this {:keys [indentation
+  (toString [this {:keys [remove-fields
+                          indentation
                           trailing-comma?
                           trailing-newline?
                           =-padded?]
-                   :or   {indentation    "  "
-                          trailing-comma? true
+                   :or   {remove-fields     #{}
+                          indentation       "  "
+                          trailing-comma?   true
                           trailing-newline? true
-                          =-padded?       true}}]
+                          =-padded?         true}}]
     ; omit citekey (and the comma after) if citekey is nil
     (str \@ pubtype \{ (some-> citekey (str \,)) \newline
          (->> fields
+              (remove #(-> % :key string/lower-case remove-fields))
               (map (field-formatter indentation (when =-padded? \space)))
               (string/join (str \, \newline)))
          (when trailing-comma? \,) (when trailing-newline? \newline)
