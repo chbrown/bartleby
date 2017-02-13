@@ -183,8 +183,8 @@
   returning a sequence of characters"
   []
   (between (lookahead (any-char-except \@))
-           (char \newline)
-           (many (any-char-except \newline))))
+           linebreak
+           (many (any-char-except-in #{\return \newline}))))
 
 (defn gloss-line
   ; TODO: create a parsastron helper to map a parser's cok/eok values through the given function and merge this wrapper with gloss-line-characters

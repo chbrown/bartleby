@@ -3,8 +3,11 @@
   (:require [the.parsatron :refer :all])
   (:import [the.parsatron InputState SourcePos]))
 
-(def whitespace-chars #{\space \newline \tab})
+(def whitespace-chars #{\space \return \newline \tab \formfeed})
 (def whitespace (many (token whitespace-chars)))
+
+(def linebreak (either (>> (char \return) (attempt (char \newline)))
+                       (char \newline)))
 
 (defn maybe [p]
   ; not sure if the "attempt" is necessary, but it seems like attempt really ought
