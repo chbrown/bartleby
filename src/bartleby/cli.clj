@@ -3,6 +3,7 @@
             [clojure.data.json :as json]
             [clojure.tools.cli :refer [parse-opts]]
             [bartleby.core :as core]
+            [bartleby.transforms :as transforms]
             [bartleby.language.bibtex :as bibtex]
             [clojure.java.io :as io])
   (:import [bartleby.core ReadableFile])
@@ -55,6 +56,7 @@
   (->> inputs
        (map core/char-seq)
        (mapcat bibtex/read-all)
+       (map (transforms/compose (:transforms options)))
        (map #(bibtex/write-str % options))))
 
 (defn select-command
@@ -144,6 +146,10 @@
     :parse-fn #(-> % string/lower-case (string/split #","))
     ; support multiple applications
     :assoc-fn (fn [m k v] (update m k into v))]
+   ["-t" "--transform NAME" "Transform entries with operation NAME; this argument can be repeated"
+    :id :transforms
+    :default []
+    :assoc-fn (fn [m k v] (update m k conj v))]
    ["-h" "--help"]
    ["-v" "--version"]])
 
