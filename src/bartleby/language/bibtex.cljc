@@ -9,6 +9,17 @@
 
 (defrecord Field [key value])
 
+(defn split-field
+  "If field contains a colon, move the bit after the colon into a new field
+  and return both; otherwise return a singleton vector of the original field"
+  [field suffix-key]
+  (let [{:keys [key value]} field
+        [prefix suffix] (string/split value #":" 2)]
+    (if suffix
+      [(Field. key (string/trimr prefix))
+       (Field. suffix-key (string/triml suffix))]
+      [field])))
+
 (defprotocol Formattable
   (toString [this options] "Return customized string representation"))
 

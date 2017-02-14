@@ -146,3 +146,24 @@
     (string/replace tex-string all-matches-pattern
       (fn [group0]
         (get (->> replacements (filter #(= (:match %) group0)) first) :output (str "no output found for '" group0 "'"))))))
+
+(def ^:private key->subkey {"title" "subtitle"
+                            "booktitle" "booksubtitle"
+                            ; maybe handle case-matching better somehow?
+                            "Title" "Subtitle"
+                            "Booktitle" "Booksubtitle"})
+
+(defn extract-subtitles
+  "If there is a colon in a (book)title field, and no existing sub(book)title,
+  remove the subtitle from the field's value and put it in a new field"
+  [fields]
+  (let [existing-keys (->> fields (map :key) (map string/lower-case) set)]
+    (->> (for [field fields
+               :let [subkey (key->subkey (:key field))]]
+           (if (and subkey (not (existing-keys (string/lower-case subkey))))
+             ; this is a splittable field that has not already been split
+             (bibtex/split-field field subkey)
+             ; this field cannot be split
+             [field]))
+         ; have to flat map over the fields
+         (apply concat))))
