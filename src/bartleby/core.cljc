@@ -83,7 +83,6 @@
       ; there should only be one level of crossrefs, maybe two; more than that is pathological
       (expand-citekeys items all-citekeys))))
 
-
 (defn reorder-name
   "standardize name parts from a single BibTeX chunk of a list of authors"
   [s]

@@ -241,9 +241,9 @@
 (defn write-str
   ([item] (write-str item {}))
   ([item options]
-    (toString item options)))
+   (toString item options)))
 
 (defn write
   ([item writer] (write item writer {}))
   ([item writer options]
-    (.write writer (write-str item options))))
+   (.write writer (write-str item options))))
