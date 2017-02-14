@@ -49,6 +49,8 @@
     (let [fields-map (map (fn [{:keys [key value]}] {key value}) fields)]
       (into {"pubtype" pubtype, "citekey" citekey} fields-map))))
 
+(def Reference? (partial instance? Reference))
+
 (defrecord Gloss [lines]
   Object
   (toString [this] (toString this nil))
