@@ -2,6 +2,7 @@
 
 [![Travis CI Build Status](https://travis-ci.org/chbrown/bartleby.svg)](https://travis-ci.org/chbrown/bartleby)
 [![Coveralls Coverage Status](https://coveralls.io/repos/chbrown/bartleby/badge.svg)](https://coveralls.io/github/chbrown/bartleby)
+[![Clojars Project](https://img.shields.io/clojars/v/bartleby.svg)](https://clojars.org/bartleby)
 
 A very _faithful_ BibTeX parser.
 
