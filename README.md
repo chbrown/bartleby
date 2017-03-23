@@ -70,6 +70,23 @@ I've also compiled my own [guide / reference / notes](Parsatron.md) for the `par
 
 ## Release instructions
 
+### Cutting and deploying a new version
+
+Update the version manually in `project.clj` and `README.md`, commit those changes, and push.
+
+Then add a tag and push:
+
+    tag=v$(lein pprint :version | tr -d \")
+    git tag $tag
+    git push --tags
+
+Finally, deploy to [Clojars](https://clojars.org/):
+
+    lein deploy
+
+* _TODO_: customize `:release-tasks` and use `lein release :major / :minor / :patch`
+
+
 ### Generating and publishing documentation
 
 Create a fresh clone from the `gh-pages` branch:
