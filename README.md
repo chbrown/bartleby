@@ -87,6 +87,32 @@ Finally, deploy to [Clojars](https://clojars.org/):
 * _TODO_: customize `:release-tasks` and use `lein release :major / :minor / :patch`
 
 
+### Adding binaries to [GitHub releases](releases)
+
+This uses [github-release](https://github.com/aktau/github-release) (`go get github.com/aktau/github-release`),
+which expects the environment variables `GITHUB_USER` and `GITHUB_TOKEN` to be set.
+
+Build the normal jar and uber(standalone)jar:
+
+    lein uberjar
+
+Create a GitHub "release":
+
+    # set tag if you lost it from earlier:
+    #tag=$(git tag --sort=committerdate | tail -1)
+    # or:
+    #tag=$(git describe --abbrev=0 --tags)
+    github-release release -r bartleby -t $tag
+
+Upload the built files:
+
+    ver=$(lein pprint :version | tr -d \")
+    github-release upload -r bartleby -t $tag -f target/bartleby-$ver.jar -n bartleby-$ver.jar
+    github-release upload -r bartleby -t $tag -f target/bartleby-$ver-standalone.jar -n bartleby-$ver-standalone.jar
+
+(You can check the current tags / releases available on GitHub at any time with: `github-release info -r bartleby`)
+
+
 ### Generating and publishing documentation
 
 Create a fresh clone from the `gh-pages` branch:
