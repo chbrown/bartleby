@@ -68,6 +68,28 @@ Delete .bib file entries not used in LaTeX document:
 I've also compiled my own [guide / reference / notes](Parsatron.md) for the `parsatron` library.
 
 
+## Release instructions
+
+### Generating and publishing documentation
+
+Create a fresh clone from the `gh-pages` branch:
+
+    repo=${TMPDIR-/tmp/}bartleby-gh-pages
+    git clone git@github.com:chbrown/bartleby.git -b gh-pages $repo
+
+Now, back in this repo on the `master` branch, generate the documentation directly into that clone:
+
+    lein update-in :codox assoc :output-path \"$repo\" -- codox
+    rev=$(git rev-parse --short master)
+
+Then go to that repo's directory, commit the changes with a message pointing to the current commit on `master`, and push:
+
+    cd $repo
+    git add .
+    git commit -m "Sync documentation with master @ $rev"
+    git push
+
+
 ## License
 
 Copyright © 2016-2017 Christopher Brown. [MIT Licensed](https://chbrown.github.io/licenses/MIT/#2016-2017).
