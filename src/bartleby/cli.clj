@@ -69,7 +69,8 @@
   (->> inputs
        (map core/char-seq)
        (mapcat bibtex/read-all)
-       (map #(json/write-str (bibtex/toJSON %)))))
+       (map bibtex/toJSON)
+       (map json/write-str)))
 
 (defn json2bib-command
   "Parse JSON-LD and output as standard formatted BibTeX"
