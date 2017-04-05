@@ -9,15 +9,12 @@
   (:import [bartleby.core ReadableFile])
   (:gen-class))
 
-(def ^:private properties
-  (with-open [reader (-> "META-INF/maven/bartleby/bartleby/pom.properties"
-                         io/resource
-                         io/reader)]
-    (into {} (doto (java.util.Properties.)
-                   (.load reader)))))
-
-(def ^:private version
-  (get properties "version"))
+(defn- resource->Properties
+  "Load the given resource as a Properties instance"
+  [resource-name]
+  (with-open [reader (-> resource-name io/resource io/reader)]
+    (doto (java.util.Properties.)
+          (.load reader))))
 
 (defrecord BufferedFileReader [name reader]
   ReadableFile
@@ -153,40 +150,47 @@
    ["-h" "--help"]
    ["-v" "--version"]])
 
-(def ^:private usage-fmt "bartleby %s
-
-Usage: bart [options] command [input [...]] [< input]
-
-Options:
-%s
-
-Commands:
-%s
-")
-
-(defn- exit! [code]
+(defn- exit!
+  "Wrap System/exit as a Clojure var so that we can mock it out during testing"
+  [code]
   (System/exit code))
+
+(defn- print-info-and-exit!
+  [summary show-help & messages]
+  (let [properties (resource->Properties "META-INF/maven/bartleby/bartleby/pom.properties")
+        version (get properties "version")]
+    ; always print the 'bartleby <version>' banner
+    (println "bartleby" version)
+    ; print the full usage + options + commands help when show-help is true
+    (when show-help
+      (println)
+      (println "Usage: bart [options] command [input [...]] [< input]")
+      (println)
+      (println "Options:")
+      (println summary)
+      (println)
+      (println "Commands:")
+      (println (summarize-commands commands))
+      (println))
+    ; print any given (error) messages
+    (doseq [message messages]
+      (println message))
+    ; exit explicitly & immediately
+    (exit! (if messages 1 0))))
 
 (defn -main
   [& argv]
   (let [{:keys [options arguments errors summary] :as opts} (parse-opts argv cli-options)
-        commands-summary (summarize-commands commands)
-        usage (format usage-fmt version summary commands-summary)
         [command & args] arguments
         command-fn (get commands (keyword command))]
     (cond
-      (:help options) (do (println usage)
-                          (exit! 0))
-      (:version options) (do (println "bartleby" version)
-                             (exit! 0))
-      (nil? command) (do (println usage)
-                         (println "ArgumentError: you must supply a command")
-                         (exit! 1))
-      (nil? command-fn) (do (println usage)
-                            (println (str "ArgumentError: unrecognized command '" command "'"))
-                            (exit! 1))
-      errors (do (println "Argument Error:" (string/join \newline errors))
-                 (exit! 1))
+      (:help options) (print-info-and-exit! summary true)
+      (:version options) (print-info-and-exit! summary false)
+      (nil? command) (print-info-and-exit! summary true "ArgumentError: you must supply a command")
+      (nil? command-fn) (print-info-and-exit! summary true (str "ArgumentError: unrecognized command '" command "'"))
+      ; clojure.tools.cli/parse-opts may include a vector of error message strings in :errors
+      ; if the cli parser encountered any errors (nil implies success)
+      errors (print-info-and-exit! summary true (str "Argument Error: " (string/join \newline errors)))
       :default (let [arg-inputs (map file-reader args)
                      ; TODO: test for stdin-as-TTY better, e.g., http://stackoverflow.com/a/41576107
                      stdin-is-tty? (.ready *in*)
