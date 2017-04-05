@@ -16,7 +16,7 @@
     (doto (java.util.Properties.)
           (.load reader))))
 
-(defrecord BufferedFileReader [name reader]
+(defrecord BufferedFileReader [name ^java.io.Reader reader]
   ReadableFile
   (getName [this] name)
   (read [this] (.read reader)))
@@ -69,7 +69,7 @@
   (->> inputs
        (map core/char-seq)
        (mapcat bibtex/read-all)
-       (map #(json/write-str (.toJSON %)))))
+       (map #(json/write-str (bibtex/toJSON %)))))
 
 (defn json2bib-command
   "Parse JSON-LD and output as standard formatted BibTeX"
@@ -193,13 +193,13 @@
       errors (print-info-and-exit! summary true (str "Argument Error: " (string/join \newline errors)))
       :default (let [arg-inputs (map file-reader args)
                      ; TODO: test for stdin-as-TTY better, e.g., http://stackoverflow.com/a/41576107
-                     stdin-is-tty? (.ready *in*)
+                     stdin-is-tty? (.ready ^java.io.Reader *in*)
                      inputs (if stdin-is-tty?
                               (conj (BufferedFileReader. "/dev/stdin" *in*) arg-inputs)
                               arg-inputs)]
                  (->> (command-fn inputs options)
                       (interpose (str \newline))
-                      (map #(.write *out* %))
+                      (map (fn [^String line] (.write *out* line)))
                       (dorun))))
     ; weirdly, System/out doesn't always get automatically flushed
     (.flush *out*)))

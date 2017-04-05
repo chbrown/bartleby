@@ -238,12 +238,12 @@
   (run-seq (item)
            (>> whitespace (eof)) s))
 
-(defn write-str
+(defn ^String write-str
   ([item] (write-str item {}))
   ([item options]
    (toString item options)))
 
 (defn write
-  ([item writer] (write item writer {}))
-  ([item writer options]
+  ([item ^java.io.Writer writer] (write item writer {}))
+  ([item ^java.io.Writer writer options]
    (.write writer (write-str item options))))
