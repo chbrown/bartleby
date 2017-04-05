@@ -7,7 +7,23 @@
 ; object model (records)
 ; ======================
 
-(defrecord Field [key value])
+(defprotocol Formattable
+  (toString [this options] "Format this into an options-customized string representation"))
+
+(defprotocol ToJSON
+  (toJSON [this] "Convert this into a (flat) JSON-friendly structure"))
+
+(defrecord Field [key value]
+  Formattable
+  ; Helper function for currying the indentation and =-padding options before formatting multiple fields
+  (toString [this {:keys [indentation
+                          =-padding]
+                   :or   {indentation "  "
+                          =-padding " "}}]
+    (str indentation key =-padding \= =-padding \{ value \}))
+  ToJSON
+  (toJSON [this]
+    {key value}))
 
 (defn split-field
   "If field contains a colon, move the bit after the colon into a new field
@@ -19,19 +35,6 @@
       [(Field. key (string/trimr prefix))
        (Field. suffix-key (string/triml suffix))]
       [field])))
-
-(defprotocol Formattable
-  (toString [this options] "Return customized string representation"))
-
-(defprotocol ToJSON
-  (toJSON [this] "Flatten the record to a flat JSON-friendly structure"))
-
-(defn- field-formatter
-  "Helper function for currying the indentation and =-padding options
-  before formatting multiple fields"
-  [indentation =-padding]
-  (fn [{:keys [key value]}]
-    (str indentation key =-padding \= =-padding \{ value \})))
 
 (defrecord Reference [pubtype citekey fields]
   Object
@@ -51,14 +54,13 @@
     (str \@ pubtype \{ (some-> citekey (str \,)) \newline
          (->> fields
               (remove #(-> % :key string/lower-case remove-fields))
-              (map (field-formatter indentation (when =-padded? \space)))
+              (map #(toString % {:indentation indentation :=-padding (when =-padded? \space)}))
               (string/join (str \, \newline)))
          (when trailing-comma? \,) (when trailing-newline? \newline)
          \} \newline))
   ToJSON
   (toJSON [this]
-    (let [fields-map (map (fn [{:keys [key value]}] {key value}) fields)]
-      (into {"pubtype" pubtype, "citekey" citekey} fields-map))))
+    (into {"pubtype" pubtype, "citekey" citekey} (map toJSON fields))))
 
 (def Reference? (partial instance? Reference))
 
