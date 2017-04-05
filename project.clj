@@ -5,6 +5,7 @@
             :url "https://chbrown.github.io/licenses/MIT/#2016-2017"}
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/data.json "0.2.6"]
+                 [org.clojure/data.xml "0.2.0-alpha2"]
                  [org.clojure/tools.cli "0.3.5"]
                  [the/parsatron "0.0.7"]]
   :plugins [; have to include lein-cloverage here for Travis CI

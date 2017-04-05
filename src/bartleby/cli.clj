@@ -1,6 +1,7 @@
 (ns bartleby.cli
   (:require [clojure.string :as string]
             [clojure.data.json :as json]
+            [clojure.data.xml :as xml]
             [clojure.tools.cli :refer [parse-opts]]
             [bartleby.core :as core]
             [bartleby.transforms :as transforms]
@@ -80,6 +81,16 @@
        (map bibtex/fromJSON)
        (map #(bibtex/write-str % options))))
 
+(defn xml-command
+  "Parse BibTeX and output each component as XML"
+  [inputs options]
+  (let [root (->> inputs
+                  (map core/char-seq)
+                  (mapcat bibtex/read-all)
+                  (map bibtex/toXML)
+                  (xml/element* (keyword (name (xml/uri-symbol "http://bibtexml.sf.net/")) "file") {}))]
+    (list (xml/emit-str root :encoding "UTF-8"))))
+
 (defn test-command
   "Test each file in args and output the ones that are not valid BibTeX"
   [inputs options]
@@ -108,6 +119,7 @@
                :interpolate #'interpolate-command
                :json #'json-command
                :json2bib #'json2bib-command
+               :xml #'xml-command
                :test #'test-command})
 
 (defn- summarize-commands
