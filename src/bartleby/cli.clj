@@ -6,6 +6,7 @@
             [bartleby.core :as core]
             [bartleby.transforms :as transforms]
             [bartleby.language.bibtex :as bibtex]
+            [bartleby.bibtexml :as bibtexml]
             [clojure.java.io :as io])
   (:import [bartleby.core ReadableFile])
   (:gen-class))
@@ -87,9 +88,7 @@
   (let [root (->> inputs
                   (map core/char-seq)
                   (mapcat bibtex/read-all)
-                  (map bibtex/toXML)
-                  (xml/element* (keyword (name (xml/uri-symbol "http://bibtexml.sf.net/")) "file")
-                                {:xmlns/bibtex "http://bibtexml.sf.net/"}))]
+                  (bibtexml/file-element))]
     (list (xml/emit-str root :encoding "UTF-8"))))
 
 (defn test-command

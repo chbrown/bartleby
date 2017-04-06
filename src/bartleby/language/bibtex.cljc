@@ -1,7 +1,6 @@
 (ns bartleby.language.bibtex
   (:refer-clojure :exclude [char comment read]) ; avoid warning about parsatron overriding (char)
   (:require [clojure.string :as string]
-            [clojure.data.xml :as xml]
             [the.parsatron :refer :all]
             [bartleby.language.common :refer :all]))
 
@@ -14,15 +13,6 @@
 (defprotocol ToJSON
   (toJSON [this] "Convert this into a (flat) JSON-friendly structure"))
 
-(defprotocol ToXML
-  (toXML [this] "Convert this into a data.xml element/Comment"))
-
-(defn- bibtexml-qname
-  "Qualify the given local tag name as a keyword in the bibtexml namespace"
-  [local]
-  ; (name "Test"), (name 'Test), and (name :Test) all return "Test"
-  (keyword (name (xml/uri-symbol "http://bibtexml.sf.net/")) (name local)))
-
 (defrecord Field [key value]
   Formattable
   ; Helper function for currying the indentation and =-padding options before formatting multiple fields
@@ -33,10 +23,7 @@
     (str indentation key =-padding \= =-padding \{ value \}))
   ToJSON
   (toJSON [this]
-    {key value})
-  ToXML
-  (toXML [this]
-    (xml/element (bibtexml-qname (string/lower-case key)) {} value)))
+    {key value}))
 
 (defn split-field
   "If field contains a colon, move the bit after the colon into a new field
@@ -73,12 +60,7 @@
          \} \newline))
   ToJSON
   (toJSON [this]
-    (into {"pubtype" pubtype, "citekey" citekey} (map toJSON fields)))
-  ToXML
-  (toXML [this]
-    (xml/element (bibtexml-qname :entry) {:id citekey}
-      (xml/element* (bibtexml-qname pubtype) {}
-        (map toXML fields)))))
+    (into {"pubtype" pubtype, "citekey" citekey} (map toJSON fields))))
 
 (def Reference? (partial instance? Reference))
 
@@ -90,10 +72,7 @@
     (string/join \newline lines))
   ToJSON
   (toJSON [this]
-    {"lines" lines})
-  ToXML
-  (toXML [this]
-    (xml/xml-comment (string/join \newline lines))))
+    {"lines" lines}))
 
 (defn fromJSON
   [object]
