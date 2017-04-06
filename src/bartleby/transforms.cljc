@@ -33,7 +33,7 @@
     item))
 
 (defn- create-throwable
-  [message]
+  [^String message]
   #?(:clj (Exception. message)
      :cljs (js/Error. message)))
 
