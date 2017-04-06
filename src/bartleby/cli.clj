@@ -88,7 +88,8 @@
                   (map core/char-seq)
                   (mapcat bibtex/read-all)
                   (map bibtex/toXML)
-                  (xml/element* (keyword (name (xml/uri-symbol "http://bibtexml.sf.net/")) "file") {}))]
+                  (xml/element* (keyword (name (xml/uri-symbol "http://bibtexml.sf.net/")) "file")
+                                {:xmlns/bibtex "http://bibtexml.sf.net/"}))]
     (list (xml/emit-str root :encoding "UTF-8"))))
 
 (defn test-command
