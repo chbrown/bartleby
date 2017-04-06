@@ -2,7 +2,7 @@
   (:require [clojure.string :as string]
             [clojure.data.xml :refer [uri-symbol element element* xml-comment]]
             [clojure.data.xml.protocols :refer [AsElements as-elements]])
-  (:import [bartleby.language.bibtex Field Reference Gloss]))
+  (:import [bartleby.bibliography Field Reference Gloss]))
 
 (def ^:private bibtexml-ns "http://bibtexml.sf.net/")
 

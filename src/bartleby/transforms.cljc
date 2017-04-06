@@ -1,7 +1,7 @@
 (ns bartleby.transforms
   (:require [clojure.string :as string]
             [bartleby.core :as core]
-            [bartleby.language.bibtex :as bibtex]))
+            [bartleby.bibliography :as bibliography]))
 
 (def ^:private key->subkey {"title" "subtitle"
                             "booktitle" "booksubtitle"
@@ -18,7 +18,7 @@
                :let [subkey (key->subkey (:key field))]]
            (if (and subkey (not (existing-keys (string/lower-case subkey))))
              ; this is a splittable field that has not already been split
-             (bibtex/split-field field subkey)
+             (bibliography/split-field field subkey)
              ; this field cannot be split
              [field]))
          ; have to flat map over the fields
@@ -28,7 +28,7 @@
   "Run item's fields through fields-extract-subtitles if it's a Reference,
   otherwise, return item unchanged"
   [item]
-  (if (bibtex/Reference? item)
+  (if (bibliography/Reference? item)
     (update item :fields fields-extract-subtitles)
     item))
 

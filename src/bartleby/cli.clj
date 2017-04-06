@@ -7,6 +7,7 @@
             [bartleby.transforms :as transforms]
             [bartleby.language.bibtex :as bibtex]
             [bartleby.bibtexml :as bibtexml]
+            [bartleby.bibliography :as bibliography]
             [clojure.java.io :as io])
   (:import [bartleby.core ReadableFile])
   (:gen-class))
@@ -56,14 +57,14 @@
        (map core/char-seq)
        (mapcat bibtex/read-all)
        (map (transforms/compose (:transforms options)))
-       (map #(bibtex/write-str % options))))
+       (map #(bibliography/write-str % options))))
 
 (defn select-command
   "Filter out unused entries, given one or more .bib files and one or more .aux/.tex files"
   [inputs options]
   (->> inputs
        (select-cited-from-inputs)
-       (map #(bibtex/write-str % options))))
+       (map #(bibliography/write-str % options))))
 
 (defn json-command
   "Parse BibTeX and output each component as JSON"
@@ -71,7 +72,7 @@
   (->> inputs
        (map core/char-seq)
        (mapcat bibtex/read-all)
-       (map bibtex/toJSON)
+       (map bibliography/toJSON)
        (map json/write-str)))
 
 (defn json2bib-command
@@ -79,8 +80,8 @@
   [inputs options]
   (->> (line-seq inputs)
        (map json/read-str)
-       (map bibtex/fromJSON)
-       (map #(bibtex/write-str % options))))
+       (map bibliography/fromJSON)
+       (map #(bibliography/write-str % options))))
 
 (defn xml-command
   "Parse BibTeX and output each component as XML"

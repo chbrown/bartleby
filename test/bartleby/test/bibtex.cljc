@@ -6,8 +6,9 @@
             [the.parsatron :refer [run]]
             [bartleby.language.tex :as tex]
             [bartleby.language.bibtex :as bibtex]
+            [bartleby.bibliography :as bibliography]
             [bartleby.core :as core])
-  (:import [bartleby.language.bibtex Field Reference Gloss]))
+  (:import [bartleby.bibliography Field Reference Gloss]))
 
 (defn- normalize-value
   [value]
@@ -43,25 +44,25 @@
 
 (deftest test-fromJSON
   (testing "parsing Gloss"
-    (let [actual (-> {"lines" ["1" "2"]} bibtex/fromJSON)
+    (let [actual (-> {"lines" ["1" "2"]} bibliography/fromJSON)
           expected (Gloss. ["1" "2"])]
       (is (= expected actual))))
   (testing "parsing Reference"
-    (let [actual (-> {"pubtype" "book", "citekey" "benjamin", "title" "Reason"} bibtex/fromJSON)
+    (let [actual (-> {"pubtype" "book", "citekey" "benjamin", "title" "Reason"} bibliography/fromJSON)
           expected (Reference. "book" "benjamin" [(Field. "title" "Reason")])]
       (is (= expected actual)))))
 
 (deftest test-write-str
   (testing "rendering Gloss"
-    (let [actual (-> (Gloss. ["1" "2"]) bibtex/write-str)
+    (let [actual (-> (Gloss. ["1" "2"]) bibliography/write-str)
           expected "1\n2"]
       (is (= expected actual))))
   (testing "rendering Reference"
-    (let [actual (-> (Reference. "book" "benjamin" [(Field. "title" "Reason")]) bibtex/write-str)
+    (let [actual (-> (Reference. "book" "benjamin" [(Field. "title" "Reason")]) bibliography/write-str)
           expected "@book{benjamin,\n  title = {Reason},\n}\n"]
       (is (= expected actual))))
   (testing "rendering Reference without citeky"
-    (let [actual (-> (Reference. "book" nil [(Field. "title" "Apparent")]) bibtex/write-str)
+    (let [actual (-> (Reference. "book" nil [(Field. "title" "Apparent")]) bibliography/write-str)
           expected "@book{\n  title = {Apparent},\n}\n"]
       (is (= expected actual)))))
 

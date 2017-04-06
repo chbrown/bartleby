@@ -2,92 +2,8 @@
   (:refer-clojure :exclude [char comment read]) ; avoid warning about parsatron overriding (char)
   (:require [clojure.string :as string]
             [the.parsatron :refer :all]
+            [bartleby.bibliography :refer [->Field ->Reference ->Gloss]]
             [bartleby.language.common :refer :all]))
-
-; object model (records)
-; ======================
-
-(defprotocol Formattable
-  (toString [this options] "Format this into an options-customized string representation"))
-
-(defprotocol ToJSON
-  (toJSON [this] "Convert this into a (flat) JSON-friendly structure"))
-
-(defrecord Field [key value]
-  Formattable
-  ; Helper function for currying the indentation and =-padding options before formatting multiple fields
-  (toString [this {:keys [indentation
-                          =-padding]
-                   :or   {indentation "  "
-                          =-padding " "}}]
-    (str indentation key =-padding \= =-padding \{ value \}))
-  ToJSON
-  (toJSON [this]
-    {key value}))
-
-(defn split-field
-  "If field contains a colon, move the bit after the colon into a new field
-  and return both; otherwise return a singleton vector of the original field"
-  [field suffix-key]
-  (let [{:keys [key value]} field
-        [prefix suffix] (string/split value #":" 2)]
-    (if suffix
-      [(Field. key (string/trimr prefix))
-       (Field. suffix-key (string/triml suffix))]
-      [field])))
-
-(defrecord Reference [pubtype citekey fields]
-  Object
-  (toString [this] (toString this {}))
-  Formattable
-  (toString [this {:keys [remove-fields
-                          indentation
-                          trailing-comma?
-                          trailing-newline?
-                          =-padded?]
-                   :or   {remove-fields     #{}
-                          indentation       "  "
-                          trailing-comma?   true
-                          trailing-newline? true
-                          =-padded?         true}}]
-    ; omit citekey (and the comma after) if citekey is nil
-    (str \@ pubtype \{ (some-> citekey (str \,)) \newline
-         (->> fields
-              (remove #(-> % :key string/lower-case remove-fields))
-              (map #(toString % {:indentation indentation :=-padding (when =-padded? \space)}))
-              (string/join (str \, \newline)))
-         (when trailing-comma? \,) (when trailing-newline? \newline)
-         \} \newline))
-  ToJSON
-  (toJSON [this]
-    (into {"pubtype" pubtype, "citekey" citekey} (map toJSON fields))))
-
-(def Reference? (partial instance? Reference))
-
-(defrecord Gloss [lines]
-  Object
-  (toString [this] (toString this nil))
-  Formattable
-  (toString [this _]
-    (string/join \newline lines))
-  ToJSON
-  (toJSON [this]
-    {"lines" lines}))
-
-(defn fromJSON
-  [object]
-  (if (contains? object "pubtype")
-    ; (map->Reference object)
-    (let [pubtype (get object "pubtype")
-          citekey (get object "citekey")
-          fields-map (dissoc object "pubtype" "citekey")
-          fields (map (fn [[key value]] (Field. key value)) fields-map)]
-      (Reference. pubtype citekey fields))
-    ; (map->Gloss object)
-    (Gloss. (get object "lines"))))
-
-; parsing
-; =======
 
 (def ^:private delimiter-chars (into whitespace-chars #{\, \{ \} \=}))
 
@@ -173,7 +89,7 @@
            _ whitespace
            _ (maybe (char \,))
            _ whitespace]
-    (always (Field. key value))))
+    (always (->Field key value))))
 
 (defn reference
   "Capture a single BibTeX entry, returning a Reference record"
@@ -190,7 +106,7 @@
            ; perhaps the lookahead wrapper isn't necessary?
            ; was: (lookahead (eof))
            _ (either (char \}) (eof))]
-    (always (Reference. pubtype citekey fields))))
+    (always (->Reference pubtype citekey fields))))
 
 (defn gloss-line-characters
   "Captures a single line of interlinear comments,
@@ -210,7 +126,7 @@
 (defn gloss
   []
   (let->> [lines (many1 (gloss-line))]
-    (always (Gloss. lines))))
+    (always (->Gloss lines))))
 
 (defn item
   "Capture any valid bibtex item, potentially preceded by whitespace"
@@ -239,13 +155,3 @@
   [s]
   (run-seq (item)
            (>> whitespace (eof)) s))
-
-(defn ^String write-str
-  ([item] (write-str item {}))
-  ([item options]
-   (toString item options)))
-
-(defn write
-  ([item ^java.io.Writer writer] (write item writer {}))
-  ([item ^java.io.Writer writer options]
-   (.write writer (write-str item options))))
