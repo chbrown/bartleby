@@ -3,7 +3,11 @@
   (:require [clojure.string :as string]
             [the.parsatron :refer :all]
             [bartleby.bibliography :refer [->Field ->Reference ->Gloss]]
-            [bartleby.language.common :refer :all]))
+            [bartleby.language.common :refer :all])
+  (:import [java.io Writer]
+           [bartleby.bibliography Field Reference Gloss]))
+
+;;; BIBTEX READER
 
 (def ^:private delimiter-chars (into whitespace-chars #{\, \{ \} \=}))
 
@@ -155,3 +159,47 @@
   [s]
   (run-seq (item)
            (>> whitespace (eof)) s))
+
+;;; BIBTEX WRITER
+
+(def ^{:dynamic true :private true} *indentation*)
+(def ^{:dynamic true :private true} *trailing-comma?*)
+(def ^{:dynamic true :private true} *trailing-newline?*)
+(def ^{:dynamic true :private true} *=-padded?*)
+
+(defprotocol BibTeXFormatter
+  (-format [this] "Format this as a BibTeX string"))
+
+(extend-protocol BibTeXFormatter
+  Field
+  (-format [{:keys [key value]}]
+    (str *indentation* key (when *=-padded?* \space) \= (when *=-padded?* \space) \{ value \}))
+  Reference
+  (-format [{:keys [pubtype citekey fields]}]
+    ; omit citekey (and the comma after) if citekey is nil
+    (str \@ pubtype \{ (some-> citekey (str \,)) \newline
+         (string/join (str \, \newline) (map -format fields))
+         (when *trailing-comma?* \,) (when *trailing-newline?* \newline)
+         \} \newline))
+  Gloss
+  (-format [{:keys [lines]}]
+    (string/join \newline lines)))
+
+(defn write-str
+  "Convert bibliography item into BibTeX-formatted string"
+  [item & options]
+  (let [{:keys [indentation trailing-comma? trailing-newline? =-padded?]
+         :or   {indentation       "  "
+                trailing-comma?   true
+                trailing-newline? true
+                =-padded?         true}} options]
+    (binding [*indentation*       indentation
+              *trailing-comma?*   trailing-comma?
+              *trailing-newline?* trailing-newline?
+              *=-padded?*         =-padded?]
+      (-format item))))
+
+(defn write
+  "Write BibTeX-formatted output to a java.io.Writer."
+  [item ^Writer writer & options]
+  (.write writer ^String (apply write-str item options)))

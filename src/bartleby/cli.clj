@@ -65,7 +65,7 @@
          (mapcat bibtex/read-all)
          (map #(apply bibliography/remove-fields % remove-fields))
          (map (compose-transforms-by-name transforms))
-         (map #(bibliography/write-str % options)))))
+         (map #(apply bibtex/write-str % options)))))
 
 (defn select-command
   "Filter out unused entries, given one or more .bib files and one or more .aux/.tex files"
@@ -74,7 +74,7 @@
     (->> inputs
          (select-cited-from-inputs)
          (map #(apply bibliography/remove-fields % remove-fields))
-         (map #(bibliography/write-str % options)))))
+         (map #(apply bibtex/write-str % options)))))
 
 (defn json-command
   "Parse BibTeX and output each component as JSON"
@@ -94,7 +94,7 @@
          (map json/read-str)
          (map bibliography/fromJSON)
          (map #(apply bibliography/remove-fields % remove-fields))
-         (map #(bibliography/write-str % options)))))
+         (map #(apply bibtex/write-str % options)))))
 
 (defn xml-command
   "Parse BibTeX and output each component as XML"
