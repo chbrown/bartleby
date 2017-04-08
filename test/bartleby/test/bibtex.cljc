@@ -30,7 +30,7 @@
     (testing (str "parsing " bibfile " into json equivalent")
       (let [jsonfile (string/replace bibfile ".bib" ".json")
             ; is io/resource utf-8 by default?
-            actual (-> bibfile io/resource slurp bibtex/read-str .toJSON normalize-json)
+            actual (-> bibfile io/resource slurp bibtex/read-str bibliography/toJSON normalize-json)
             expected (-> jsonfile io/resource slurp json/read-str)]
         ; clojure.test doesn't care about order but (= expected actual) is how humane-test-output reads it
         (is (= expected actual))))))
