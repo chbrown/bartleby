@@ -83,6 +83,20 @@
       ; there should only be one level of crossrefs, maybe two; more than that is pathological
       (expand-citekeys items all-citekeys))))
 
+(defn split-fullname
+  "Parse fullname into a [given-names surname] (or just [given-names]) vector"
+  [fullname]
+  (let [[prefix suffix] (string/split fullname #"\s*,\s+" 2)]
+    (if suffix
+      ; handling manually comma-separated names is easy
+      [suffix prefix]
+      ; it's a little trickier if there was no comma
+      ; TODO: handle von, da, del, etc.
+      (let [parts (string/split prefix #"\s+")]
+        (if (> (count parts) 2)
+          [(string/join \space (butlast parts)) (last parts)]
+          parts)))))
+
 (defn reorder-name
   "standardize name parts from a single BibTeX chunk of a list of authors"
   [s]

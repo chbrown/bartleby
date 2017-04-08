@@ -21,6 +21,15 @@
           expected ["J93-2004" "papineni-EtAl:2002:ACL"]]
       (is (= expected actual)))))
 
+(deftest test-split-fullname
+  (is (= ["Andrea" "Littlemore"] (core/split-fullname "Andrea Littlemore")))
+  (is (= ["Carrie E." "Donut"] (core/split-fullname "Carrie E. Donut")))
+  (is (= ["Benjamin" "Adams"] (core/split-fullname "Adams, Benjamin")))
+  (is (= ["Benjamin Haar" "Adams"] (core/split-fullname "Adams, Benjamin Haar")))
+  (is (= ["Lucky" "von Duck"] (core/split-fullname "von Duck, Lucky")))
+  ; TODO: add test for inferring patronyms from fullnames without commas
+  (is (= ["Madonna"] (core/split-fullname "Madonna"))))
+
 (deftest test-interpolate
   (let [references [(Reference. "book" "littlemore" [(Field. "author" "Andrea Littlemore")
                                                      (Field. "year" "2016")])
