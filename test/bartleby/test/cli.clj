@@ -25,7 +25,7 @@
 (deftest test-cat
   (let [command-fn (:cat cli/commands)
         inputs (-> "examples/multi/paper.bib" io/resource io/reader list)
-        items (command-fn inputs {})]
+        items (command-fn inputs)]
     (is (= 4 (count items)))))
 
 (deftest test-select
@@ -34,13 +34,13 @@
                    "examples/multi/paper.aux"
                    "examples/multi/paper.tex"]
         inputs (map #(-> % io/resource cli/file-reader) filenames)
-        items (command-fn inputs {})]
+        items (command-fn inputs)]
     (is (= 2 (count items)))))
 
 (deftest test-json
   (let [command-fn (:json cli/commands)
         inputs (-> "examples/multi/paper.bib" io/resource io/reader list)
-        items (command-fn inputs {})]
+        items (command-fn inputs)]
     (is (= 4 (count items)))
     (is (every? #(string/starts-with? % "{") items))))
 
@@ -48,6 +48,6 @@
   (let [command-fn (:test cli/commands)
         filenames ["examples/multi/paper.bib" "examples/multi/paper.aux"]
         inputs (map #(-> % io/resource cli/file-reader) filenames)
-        [bib-line aux-line] (command-fn inputs {})]
+        [bib-line aux-line] (command-fn inputs)]
     (is (= "yes" bib-line))
     (is (= "no" aux-line))))

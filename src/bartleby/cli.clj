@@ -58,23 +58,24 @@
 
 (defn cat-command
   "Parse the input BibTeX file(s) and reformat as a stream of BibTeX, with minimal changes"
-  [inputs options]
-  (->> inputs
-       (map core/char-seq)
-       (mapcat bibtex/read-all)
-       (map (compose-transforms-by-name (:transforms options)))
-       (map #(bibliography/write-str % options))))
+  [inputs & options]
+  (let [{:keys [transforms]} options]
+    (->> inputs
+         (map core/char-seq)
+         (mapcat bibtex/read-all)
+         (map (compose-transforms-by-name transforms))
+         (map #(bibliography/write-str % options)))))
 
 (defn select-command
   "Filter out unused entries, given one or more .bib files and one or more .aux/.tex files"
-  [inputs options]
+  [inputs & options]
   (->> inputs
        (select-cited-from-inputs)
        (map #(bibliography/write-str % options))))
 
 (defn json-command
   "Parse BibTeX and output each component as JSON"
-  [inputs options]
+  [inputs & options]
   (->> inputs
        (map core/char-seq)
        (mapcat bibtex/read-all)
@@ -82,7 +83,7 @@
 
 (defn json2bib-command
   "Parse JSON-LD and output as standard formatted BibTeX"
-  [inputs options]
+  [inputs & options]
   (->> (line-seq inputs)
        (map json/read-str)
        (map bibliography/fromJSON)
@@ -90,7 +91,7 @@
 
 (defn xml-command
   "Parse BibTeX and output each component as XML"
-  [inputs options]
+  [inputs & options]
   (let [root (->> inputs
                   (map core/char-seq)
                   (mapcat bibtex/read-all)
@@ -99,7 +100,7 @@
 
 (defn test-command
   "Test each file in args and output the ones that are not valid BibTeX"
-  [inputs options]
+  [inputs & options]
   ; TODO: take filenames, and print the name of each unparseable file to STDERR
   (->> inputs
        (map core/char-seq)
@@ -107,7 +108,7 @@
 
 (defn interpolate-command
   "Replace literal names with cite commands, given .tex and .bib file(s)"
-  [inputs options]
+  [inputs & options]
   (let [input-tex? (fn [{:keys [name reader]}] (or (= name "/dev/stdin") (string/ends-with? name ".tex")))
         items (mapcat input->items inputs)
         references (filter :citekey items)]
@@ -117,7 +118,7 @@
          (map slurp)
          (map #(core/interpolate % references)))))
 
-; each command should take (inputs options) and return a seq of lines
+; each command should take (inputs & options) and return a seq of lines
 ; the #' reader macro enables access to the function's metadata later
 ; but doesn't prevent us from calling the function directly as usual
 (def commands {:cat #'cat-command
@@ -216,7 +217,11 @@
                      inputs (if stdin-is-tty?
                               (conj (BufferedFileReader. "/dev/stdin" *in*) arg-inputs)
                               arg-inputs)]
-                 (->> (command-fn inputs options)
+                 (->> options
+                      ; convert options map to list of key-value tuples
+                      (apply concat)
+                      ; command-fn takes options as rest-args
+                      (apply command-fn inputs)
                       (interpose (str \newline))
                       (map (fn [^String line] (.write *out* line)))
                       (dorun))))
