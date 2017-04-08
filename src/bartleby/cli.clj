@@ -4,7 +4,7 @@
             [clojure.data.xml :as xml]
             [clojure.tools.cli :refer [parse-opts]]
             [bartleby.core :as core]
-            [bartleby.transforms :as transforms]
+            [bartleby.transforms :refer [compose-transforms-by-name]]
             [bartleby.language.bibtex :as bibtex]
             [bartleby.bibtexml :as bibtexml]
             [bartleby.bibliography :as bibliography]
@@ -62,7 +62,7 @@
   (->> inputs
        (map core/char-seq)
        (mapcat bibtex/read-all)
-       (map (transforms/compose (:transforms options)))
+       (map (compose-transforms-by-name (:transforms options)))
        (map #(bibliography/write-str % options))))
 
 (defn select-command

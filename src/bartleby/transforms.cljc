@@ -45,7 +45,7 @@
 
 (def transforms {"extract-subtitles" extract-subtitles})
 
-(defn compose
+(defn compose-transforms-by-name
   "Find the specified transforms by name and combine into one function that
   applies them left to right"
   [names]
