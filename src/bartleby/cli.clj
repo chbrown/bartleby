@@ -59,42 +59,51 @@
 (defn cat-command
   "Parse the input BibTeX file(s) and reformat as a stream of BibTeX, with minimal changes"
   [inputs & options]
-  (let [{:keys [transforms]} options]
+  (let [{:keys [transforms remove-fields]} options]
     (->> inputs
          (map core/char-seq)
          (mapcat bibtex/read-all)
+         (map #(apply bibliography/remove-fields % remove-fields))
          (map (compose-transforms-by-name transforms))
          (map #(bibliography/write-str % options)))))
 
 (defn select-command
   "Filter out unused entries, given one or more .bib files and one or more .aux/.tex files"
   [inputs & options]
-  (->> inputs
-       (select-cited-from-inputs)
-       (map #(bibliography/write-str % options))))
+  (let [{:keys [remove-fields]} options]
+    (->> inputs
+         (select-cited-from-inputs)
+         (map #(apply bibliography/remove-fields % remove-fields))
+         (map #(bibliography/write-str % options)))))
 
 (defn json-command
   "Parse BibTeX and output each component as JSON"
   [inputs & options]
-  (->> inputs
-       (map core/char-seq)
-       (mapcat bibtex/read-all)
-       (map json/write-str)))
+  (let [{:keys [remove-fields]} options]
+    (->> inputs
+         (map core/char-seq)
+         (mapcat bibtex/read-all)
+         (map #(apply bibliography/remove-fields % remove-fields))
+         (map json/write-str))))
 
 (defn json2bib-command
   "Parse JSON-LD and output as standard formatted BibTeX"
   [inputs & options]
-  (->> (line-seq inputs)
-       (map json/read-str)
-       (map bibliography/fromJSON)
-       (map #(bibliography/write-str % options))))
+  (let [{:keys [remove-fields]} options]
+    (->> (line-seq inputs)
+         (map json/read-str)
+         (map bibliography/fromJSON)
+         (map #(apply bibliography/remove-fields % remove-fields))
+         (map #(bibliography/write-str % options)))))
 
 (defn xml-command
   "Parse BibTeX and output each component as XML"
   [inputs & options]
-  (let [root (->> inputs
+  (let [{:keys [remove-fields]} options
+        root (->> inputs
                   (map core/char-seq)
                   (mapcat bibtex/read-all)
+                  (map #(apply bibliography/remove-fields % remove-fields))
                   (bibtexml/file-element))]
     (list (xml/emit-str root :encoding "UTF-8"))))
 

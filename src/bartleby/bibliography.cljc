@@ -34,20 +34,17 @@
   Object
   (toString [this] (toString this {}))
   Formattable
-  (toString [this {:keys [remove-fields
-                          indentation
+  (toString [this {:keys [indentation
                           trailing-comma?
                           trailing-newline?
                           =-padded?]
-                   :or   {remove-fields     #{}
-                          indentation       "  "
+                   :or   {indentation       "  "
                           trailing-comma?   true
                           trailing-newline? true
                           =-padded?         true}}]
     ; omit citekey (and the comma after) if citekey is nil
     (str \@ pubtype \{ (some-> citekey (str \,)) \newline
          (->> fields
-              (remove #(-> % :key string/lower-case remove-fields))
               (map #(toString % {:indentation indentation :=-padding (when =-padded? \space)}))
               (string/join (str \, \newline)))
          (when trailing-comma? \,) (when trailing-newline? \newline)
@@ -79,6 +76,13 @@
       (Reference. pubtype citekey fields))
     ; (map->Gloss object)
     (Gloss. (get object "lines"))))
+
+(defn remove-fields
+  "Remove fields matching fields-to-remove from the reference's list of fields"
+  [reference & fields-to-remove]
+  (let [blacklist (set fields-to-remove)]
+    (update reference :fields (fn [fields]
+      (remove #(-> % :key string/lower-case blacklist) fields)))))
 
 (defn ^String write-str
   ([item] (write-str item {}))
