@@ -7,6 +7,7 @@
             [bartleby.transforms :refer [compose-transforms-by-name]]
             [bartleby.language.bibtex :as bibtex]
             [bartleby.bibtexml :as bibtexml]
+            [bartleby.jats :as jats]
             [bartleby.bibliography :as bibliography]
             [clojure.java.io :as io])
   (:import [bartleby.core ReadableFile]
@@ -107,6 +108,16 @@
                   (bibtexml/file-element))]
     (list (xml/emit-str root :encoding "UTF-8"))))
 
+(defn jats-command
+  "Parse BibTeX and output each component as JATS XML"
+  [inputs & options]
+  (let [{:keys [remove-fields]} options]
+    (->> inputs
+         (map core/char-seq)
+         (mapcat bibtex/read-all)
+         (map #(apply bibliography/remove-fields % remove-fields))
+         (map jats/write-str))))
+
 (defn test-command
   "Test each file in args and output the ones that are not valid BibTeX"
   [inputs & options]
@@ -136,6 +147,7 @@
                :json #'json-command
                :json2bib #'json2bib-command
                :bibtexml #'bibtexml-command
+               :jats #'jats-command
                :test #'test-command})
 
 (defn- summarize-commands
