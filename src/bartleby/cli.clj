@@ -96,8 +96,8 @@
          (map #(apply bibliography/remove-fields % remove-fields))
          (map #(apply bibtex/write-str % options)))))
 
-(defn xml-command
-  "Parse BibTeX and output each component as XML"
+(defn bibtexml-command
+  "Parse BibTeX and output each component as (BibTe)XML"
   [inputs & options]
   (let [{:keys [remove-fields]} options
         root (->> inputs
@@ -135,7 +135,7 @@
                :interpolate #'interpolate-command
                :json #'json-command
                :json2bib #'json2bib-command
-               :xml #'xml-command
+               :bibtexml #'bibtexml-command
                :test #'test-command})
 
 (defn- summarize-commands
