@@ -4,6 +4,7 @@
             [clojure.string :as string]
             [clojure.pprint :refer [pprint]]
             ; [clojure.repl :refer :all]
+            [clojure.tools.namespace.repl :refer [refresh refresh-all]]
             [clojure.test :as test]
             [the.parsatron :as parsatron] ; [the.parsatron :refer :all]
             [bartleby.core :as core]
