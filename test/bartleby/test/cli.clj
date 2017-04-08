@@ -53,6 +53,15 @@
     (is (= 4 (count items)))
     (is (every? #(string/starts-with? % "{") items))))
 
+(deftest test-json-remove-fields
+  (let [command-fn (:json cli/commands)
+        inputs (-> "examples/multi/paper.bib" io/resource io/reader list)
+        blacklist #{"pages" "url"}
+        items (command-fn inputs :remove-fields blacklist)
+        first-item (first items)]
+    (is (false? (string/includes? first-item "pages")))
+    (is (false? (string/includes? first-item "URL")))))
+
 (deftest test-test
   (let [command-fn (:test cli/commands)
         filenames ["examples/multi/paper.bib" "examples/multi/paper.aux"]
