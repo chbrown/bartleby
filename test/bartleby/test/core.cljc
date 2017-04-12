@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [clojure.java.io :as io]
             [bartleby.core :as core])
-  (:import [bartleby.bibliography Field Reference]))
+  (:import (bartleby.bibliography Field Reference)))
 
 (deftest test-expand-citekeys
   (let [items [(Reference. "incollection" "zara" [(Field. "title" "Unrelated")])

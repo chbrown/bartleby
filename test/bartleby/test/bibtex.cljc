@@ -8,7 +8,7 @@
             [bartleby.language.bibtex :as bibtex]
             [bartleby.bibliography :as bibliography]
             [bartleby.core :as core])
-  (:import [bartleby.bibliography Field Reference Gloss]))
+  (:import (bartleby.bibliography Field Reference Gloss)))
 
 (defn- normalize-value
   [value]

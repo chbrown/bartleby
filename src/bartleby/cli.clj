@@ -10,8 +10,8 @@
             [bartleby.jats :as jats]
             [bartleby.bibliography :as bibliography]
             [clojure.java.io :as io])
-  (:import [bartleby.core ReadableFile]
-           [bartleby.bibliography ToJSON])
+  (:import (bartleby.core ReadableFile)
+           (bartleby.bibliography ToJSON))
   (:gen-class))
 
 (extend-type ToJSON

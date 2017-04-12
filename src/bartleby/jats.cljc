@@ -3,7 +3,7 @@
             [bartleby.core :refer [split-fullname wrap xml-name]]
             [clojure.data.xml :refer [element xml-comment emit-str]]
             [clojure.data.xml.protocols :refer [AsElements as-elements]])
-  (:import [bartleby.bibliography Field Reference Gloss]))
+  (:import (bartleby.bibliography Field Reference Gloss)))
 
 (def ^:private public-identifier "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.1 20151215//EN")
 (def ^:private system-identifier "https://jats.nlm.nih.gov/publishing/1.1/JATS-journalpublishing1.dtd")

@@ -1,7 +1,7 @@
 (ns bartleby.test.bibliography
   (:require [clojure.test :refer :all]
             [bartleby.bibliography :as bibliography])
-  (:import [bartleby.bibliography Field Reference Gloss]))
+  (:import (bartleby.bibliography Field Reference Gloss)))
 
 (deftest test-fromJSON
   (testing "parsing Gloss"

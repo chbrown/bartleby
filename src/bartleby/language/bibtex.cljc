@@ -4,8 +4,8 @@
             [the.parsatron :refer :all]
             [bartleby.bibliography :refer [->Field ->Reference ->Gloss]]
             [bartleby.language.common :refer :all])
-  (:import [java.io Writer]
-           [bartleby.bibliography Field Reference Gloss]))
+  (:import (java.io Writer)
+           (bartleby.bibliography Field Reference Gloss)))
 
 ;;; BIBTEX READER
 

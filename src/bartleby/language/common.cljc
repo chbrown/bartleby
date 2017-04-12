@@ -1,7 +1,7 @@
 (ns bartleby.language.common
   (:refer-clojure :exclude [char])
   (:require [the.parsatron :refer :all])
-  (:import [the.parsatron InputState SourcePos]))
+  (:import (the.parsatron InputState SourcePos)))
 
 (def whitespace-chars #{\space \return \newline \tab \formfeed})
 (def whitespace (many (token whitespace-chars)))
