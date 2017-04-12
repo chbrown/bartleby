@@ -4,7 +4,7 @@
             [clojure.string :as str]
             [bartleby.cli :as cli]))
 
-(deftest test-main
+(deftest test-main-exits
   (with-redefs [cli/exit! identity]
     (testing "help"
       (let [output (with-out-str (cli/-main "--help"))]
@@ -24,6 +24,17 @@
     (testing "tools.cli parse-opts error"
       (let [output (with-out-str (cli/-main "cat" "--magic-fix"))]
         (is (str/includes? output "Unknown option: \"--magic-fix\""))))))
+
+(deftest test-main-cat
+  (testing "from filepath"
+    (let [output (with-out-str (cli/-main "cat" "test/resources/examples/multi/paper.bib"))]
+      (is (str/includes? output "@article{Lowry01111951"))
+      (is (str/includes? output "@InProceedings{papineni-EtAl:2002:ACL"))))
+  (testing "from *in*"
+    (let [output (with-in-str (-> "examples/multi/paper.bib" io/resource slurp)
+                   (with-out-str (cli/-main "cat")))]
+      (is (str/includes? output "@article{Lowry01111951"))
+      (is (str/includes? output "@InProceedings{papineni-EtAl:2002:ACL")))))
 
 (deftest test-cat
   (let [command-fn (:cat cli/commands)
