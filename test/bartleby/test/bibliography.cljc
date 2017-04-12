@@ -16,10 +16,16 @@
 
 (deftest test-fromJSON
   (testing "parsing Gloss"
-    (let [actual (-> {"lines" ["1" "2"]} bibliography/fromJSON)
-          expected (Gloss. ["1" "2"])]
-      (is (= expected actual))))
+    (is (= (Gloss. ["1" "2"])
+           (bibliography/fromJSON {"lines" ["1" "2"]}))))
   (testing "parsing Reference"
-    (let [actual (-> {"pubtype" "book", "citekey" "benjamin", "title" "Reason"} bibliography/fromJSON)
-          expected (Reference. "book" "benjamin" [(Field. "title" "Reason")])]
-      (is (= expected actual)))))
+    (is (= (Reference. "book" "benjamin" [(Field. "title" "Reason")])
+           (bibliography/fromJSON {"pubtype" "book", "citekey" "benjamin", "title" "Reason"})))))
+
+(deftest test-toJSON
+  (testing "JSONifying Gloss"
+    (is (= {"lines" ["1" "2"]}
+           (bibliography/toJSON (Gloss. ["1" "2"])))))
+  (testing "JSONifying Reference"
+    (is (= {"pubtype" "book", "citekey" "benjamin", "title" "Reason"}
+           (bibliography/toJSON (Reference. "book" "benjamin" [(Field. "title" "Reason")]))))))
