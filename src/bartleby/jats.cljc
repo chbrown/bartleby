@@ -1,9 +1,10 @@
 (ns bartleby.jats
   (:require [clojure.string :as str]
             [bartleby.core :refer [split-fullname wrap xml-name]]
-            [clojure.data.xml :refer [element xml-comment emit-str]]
+            [clojure.data.xml :refer [element xml-comment emit emit-str]]
             [clojure.data.xml.protocols :refer [AsElements as-elements]])
-  (:import (bartleby.bibliography Field Reference Gloss)))
+  (:import (java.io Writer)
+           (bartleby.bibliography Field Reference Gloss)))
 
 (def ^:private public-identifier "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.1 20151215//EN")
 (def ^:private system-identifier "https://jats.nlm.nih.gov/publishing/1.1/JATS-journalpublishing1.dtd")
@@ -77,11 +78,19 @@
   (as-elements [{:keys [lines]}]
     (list (create-comment (str/join \newline lines)))))
 
+(defn- embed-in-article
+  "wrap ref elements in root article element"
+  [refs]
+  (element :article {:dtd-version "1.1"}
+    (element :back {}
+      (element :ref-list {} refs))))
+
 (defn write-str
-  "Produce JATS XML skeleton with /article/back/ref-list/ref elements"
+  "Generate XML string with JATS skeleton of /article/back/ref-list/ref elements"
   [entries]
-  ; wrap in root article element
-  (-> (element :article {:dtd-version "1.1" :article-type "other"}
-        (element :back {}
-          (element :ref-list {} (as-elements entries))))
-      (emit-str :encoding "UTF-8" :doctype doctype)))
+  (emit-str (embed-in-article (as-elements entries)) :encoding "UTF-8" :doctype doctype))
+
+(defn write
+  "Write JATS XML skeleton with /article/back/ref-list/ref elements to writer"
+  [entries ^Writer writer]
+  (emit (embed-in-article (as-elements entries)) writer :encoding "UTF-8" :doctype doctype))
