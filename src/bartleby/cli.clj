@@ -6,7 +6,6 @@
             [bartleby.core :as core]
             [bartleby.transforms :refer [compose-transforms-by-name]]
             [bartleby.language.bibtex :as bibtex]
-            [bartleby.bibtexml :as bibtexml]
             [bartleby.jats :as jats]
             [bartleby.bibliography :as bibliography]
             [clojure.java.io :as io])
@@ -97,17 +96,6 @@
          (map #(apply bibliography/remove-fields % remove-fields))
          (map #(apply bibtex/write-str % options)))))
 
-(defn bibtexml-command
-  "Parse BibTeX and output each component as (BibTe)XML"
-  [inputs & options]
-  (let [{:keys [remove-fields]} options
-        root (->> inputs
-                  (map core/char-seq)
-                  (mapcat bibtex/read-all)
-                  (map #(apply bibliography/remove-fields % remove-fields))
-                  (bibtexml/file-element))]
-    (list (xml/emit-str root :encoding "UTF-8"))))
-
 (defn jats-command
   "Parse BibTeX and output each component as JATS XML"
   [inputs & options]
@@ -147,7 +135,6 @@
                :interpolate #'interpolate-command
                :json #'json-command
                :json2bib #'json2bib-command
-               :bibtexml #'bibtexml-command
                :jats #'jats-command
                :test #'test-command})
 
