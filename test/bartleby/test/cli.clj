@@ -20,7 +20,10 @@
     (testing "bad command"
       (let [output (with-out-str (cli/-main "magic-fix"))]
         (is (str/includes? output "Usage: bart"))
-        (is (str/includes? output "unrecognized command 'magic-fix'"))))))
+        (is (str/includes? output "unrecognized command 'magic-fix'"))))
+    (testing "tools.cli parse-opts error"
+      (let [output (with-out-str (cli/-main "cat" "--magic-fix"))]
+        (is (str/includes? output "Unknown option: \"--magic-fix\""))))))
 
 (deftest test-cat
   (let [command-fn (:cat cli/commands)
