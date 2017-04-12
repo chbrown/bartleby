@@ -116,7 +116,8 @@
          (map core/char-seq)
          (mapcat bibtex/read-all)
          (map #(apply bibliography/remove-fields % remove-fields))
-         (map jats/write-str))))
+         (jats/write-str)
+         (list))))
 
 (defn test-command
   "Test each file in args and output the ones that are not valid BibTeX"

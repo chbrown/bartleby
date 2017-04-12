@@ -1,60 +1,91 @@
 (ns bartleby.jats
   (:require [clojure.string :as string]
             [bartleby.core :refer [split-fullname]]
-            [clojure.data.xml :refer [emit-str alias-uri sexp-as-element xml-comment]]
+            [clojure.data.xml :refer [element xml-comment emit-str]]
             [clojure.data.xml.protocols :refer [AsElements as-elements]])
-  (:import [bartleby.bibliography Reference Gloss]))
+  (:import [bartleby.bibliography Field Reference Gloss]))
 
 (def ^:private public-identifier "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.1 20151215//EN")
 (def ^:private system-identifier "https://jats.nlm.nih.gov/publishing/1.1/JATS-journalpublishing1.dtd")
 (def ^:private doctype (format "<!DOCTYPE article PUBLIC \"%s\" \"%s\">" public-identifier system-identifier))
 
-(def ^:private xlink-ns "http://www.w3.org/1999/xlink")
-(alias-uri 'xlink xlink-ns)
+(defn- as-name-element
+  [fullname]
+  (let [[given-names surname] (split-fullname fullname)]
+    (element :name {}
+      (element :surname {} surname)
+      (element :given-names {} given-names))))
 
-(defn- Field->keyval
-  [{:keys [key value]}]
-  [(string/lower-case key) value])
+(defn- as-name-elements
+  [bibtexnames]
+  (->> (string/split bibtexnames #"\s+and\s+")
+       (map string/trim)
+       (map as-name-element)))
+
+(defn- as-fpage-lpage-elements
+  [pages]
+  ; split on hyphens, n-dashes, or m-dashes
+  (map #(element %1 {} %2) [:fpage :lpage] (string/split pages #"[-–—]+" 2)))
+
+(defn- wrap-str
+  [s wrapping]
+  (str wrapping s wrapping))
+
+(defn- create-comment
+  "pad content with spaces and escape contents if needed"
+  [content]
+  (-> content
+      (string/trim)
+      (string/replace #"-{2,}" "–") ; replace any sequences of multiple hyphens with a single n-dash
+      (wrap-str " ")
+      (xml-comment)))
+
+; mapping from keywordified Field. :key values to (fn [value] ...element(s)...)
+(def ^:private field-mapping {:address #(element :publisher-loc {} %)
+                              :author #(as-name-elements %)
+                              :booktitle #(element :source {} %)
+                              :day #(element :day {} %)
+                              :doi #(element :pub-id {:pub-id-type "doi"} %)
+                              :edition #(element :edition {} %)
+                              :editor #(element :person-group {:person-group-type "editor"} (as-name-elements %))
+                              :institution #(element :institution {} %)
+                              :isbn #(element :isbn {} %)
+                              :issn #(element :issn {} %)
+                              :issue #(element :issue {} %) ; "issue" is not a legit BibTeX field but whatever
+                              :journal #(element :source {} %)
+                              :month #(element :month {} %)
+                              :note #(element :comment {} %)
+                              :number #(element :issue {} %)
+                              :page #(as-fpage-lpage-elements %) ; "page" should be "pages" but why not
+                              :pages #(as-fpage-lpage-elements %)
+                              :publisher #(element :publisher-name {} %)
+                              :school #(element :institution {} %)
+                              :series #(element :series {} %)
+                              :title #(element :article-title {} %)
+                              :url #(element :uri {} %)
+                              :volume #(element :volume {} %)
+                              :year #(element :year {} %)})
 
 (extend-protocol AsElements
+  Field
+  (as-elements [{:keys [key value]}]
+    (list (if-let [value-element (get field-mapping (keyword (string/lower-case key)))]
+            (value-element value)
+            (create-comment (str key " = " value)))))
   Reference
   (as-elements [{:keys [pubtype citekey fields]}]
-    (let [{:strs [journal doi title author month year volume issue url keywords]} (mapcat Field->keyval fields)]
-      [(sexp-as-element
-        [:article {:xmlns/xlink xlink-ns :dtd-version "1.1" :article-type pubtype} ; ::xml/lang "en"
-          [:front
-            [:journal-meta
-              [:journal-title-group
-                [:journal-title journal]]]
-            [:article-meta
-              (when doi [:article-id {:pub-id-type "doi"} doi])
-              [:title-group
-                [:article-title title]]
-              [:contrib-group
-                (for [contrib-author (some-> author (string/split #"\s+and\s+"))
-                      :let [{:keys [surname given-names]} (split-fullname (string/trim contrib-author))]]
-                  [:contrib {:contrib-type "author"}
-                    [:name
-                      [:surname surname]
-                      [:given-names given-names]]
-                    [:email ""]])]
-              [:pub-date {:date-type "pub"}
-                (when month [:month month])
-                [:year year]]
-              (when volume [:volume volume])
-              (when issue [:issue issue])
-              (when url [:self-uri {::xlink/href url} "Also available at " url])
-              (when keywords
-                [:kwd-group
-                  (for [kwd (string/split keywords #",")]
-                    [:kwd (string/trim kwd)])])]]])]))
+    (list (element :ref {:id citekey}
+            (element :element-citation {:publication-type pubtype}
+              (as-elements fields)))))
   Gloss
   (as-elements [{:keys [lines]}]
-    [(xml-comment (string/join \newline lines))]))
+    (list (create-comment (string/join \newline lines)))))
 
 (defn write-str
-  "generate data.xml elements from expr"
-  [entry]
-  (->> (as-elements entry)
-       (map #(emit-str % :encoding "UTF-8" :doctype (when (instance? Reference entry) doctype)))
-       (string/join)))
+  "Produce JATS XML skeleton with /article/back/ref-list/ref elements"
+  [entries]
+  ; wrap in root article element
+  (-> (element :article {:dtd-version "1.1" :article-type "other"}
+        (element :back {}
+          (element :ref-list {} (as-elements entries))))
+      (emit-str :encoding "UTF-8" :doctype doctype)))
