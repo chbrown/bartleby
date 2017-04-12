@@ -9,8 +9,7 @@
             [bartleby.jats :as jats]
             [bartleby.bibliography :as bibliography]
             [clojure.java.io :as io])
-  (:import (bartleby.core ReadableFile)
-           (bartleby.bibliography ToJSON))
+  (:import (bartleby.bibliography ToJSON))
   (:gen-class))
 
 (extend-type ToJSON
@@ -25,19 +24,24 @@
     (doto (java.util.Properties.)
           (.load reader))))
 
-(defrecord BufferedFileReader [name ^java.io.Reader reader]
-  ReadableFile
-  (getName [this] name)
-  (read [this] (.read reader)))
+; a readable resource with a filename
+(defrecord NamedReader [name ^java.io.Reader reader])
 
-(defn file-reader
-  [name]
-  (BufferedFileReader. name (io/reader name)))
+; based on line-seq from standard library
+(defn char-seq
+  "Returns characters from rdr as a lazy sequence of strings."
+  [^java.io.Reader rdr]
+  ; .read: returns "The character read, as an integer [...],
+  ; or -1 if the end of the stream has been reached"
+  (lazy-seq
+    (let [chr (.read rdr)]
+      (when-not (= -1 chr)
+        (cons (char chr) (char-seq rdr))))))
 
 (defn- input->items
   [{:keys [name reader]}]
   (when (str/ends-with? name ".bib")
-    (-> reader core/char-seq bibtex/read-all)))
+    (-> reader char-seq bibtex/read-all)))
 
 (defn- input->citekeys
   [{:keys [name reader]}]
@@ -61,7 +65,8 @@
   [inputs & options]
   (let [{:keys [transforms remove-fields]} options]
     (->> inputs
-         (map core/char-seq)
+         (map :reader)
+         (map char-seq)
          (mapcat bibtex/read-all)
          (map #(apply bibliography/remove-fields % remove-fields))
          (map (compose-transforms-by-name transforms))
@@ -81,7 +86,8 @@
   [inputs & options]
   (let [{:keys [remove-fields]} options]
     (->> inputs
-         (map core/char-seq)
+         (map :reader)
+         (map char-seq)
          (mapcat bibtex/read-all)
          (map #(apply bibliography/remove-fields % remove-fields))
          (map json/write-str))))
@@ -90,7 +96,9 @@
   "Parse JSON-LD and output as standard formatted BibTeX"
   [inputs & options]
   (let [{:keys [remove-fields]} options]
-    (->> (line-seq inputs)
+    (->> inputs
+         (map :reader)
+         (mapcat line-seq)
          (map json/read-str)
          (map bibliography/fromJSON)
          (map #(apply bibliography/remove-fields % remove-fields))
@@ -101,7 +109,8 @@
   [inputs & options]
   (let [{:keys [remove-fields]} options]
     (->> inputs
-         (map core/char-seq)
+         (map :reader)
+         (map char-seq)
          (mapcat bibtex/read-all)
          (map #(apply bibliography/remove-fields % remove-fields))
          (jats/write-str)
@@ -112,7 +121,8 @@
   [inputs & options]
   ; TODO: take filenames, and print the name of each unparseable file to STDERR
   (->> inputs
-       (map core/char-seq)
+       (map :reader)
+       (map char-seq)
        (map #(if (core/bibtex? %) "yes" "no"))))
 
 (defn interpolate-command
@@ -207,6 +217,23 @@
     ; exit explicitly & immediately
     (exit! (if messages 1 0))))
 
+(defn- run-command!
+  [command-fn args options]
+  (let [arg-inputs (map #(NamedReader. % (io/reader %)) args)
+        ; TODO: test for stdin-as-TTY better, e.g., http://stackoverflow.com/a/41576107
+        stdin-is-tty? (.ready ^java.io.Reader *in*)
+        tty-inputs (when stdin-is-tty?
+                     (list (NamedReader. "/dev/stdin" *in*)))
+        inputs (concat tty-inputs arg-inputs)]
+    (->> options
+         ; convert options map to list of key-value tuples
+         (apply concat)
+         ; command-fn takes options as rest-args
+         (apply command-fn inputs)
+         (interpose (str \newline))
+         (map (fn [^String line] (.write *out* line)))
+         (dorun))))
+
 (defn -main
   [& argv]
   (let [{:keys [options arguments errors summary] :as opts} (parse-opts argv cli-options)
@@ -220,19 +247,6 @@
       ; clojure.tools.cli/parse-opts may include a vector of error message strings in :errors
       ; if the cli parser encountered any errors (nil implies success)
       errors (print-info-and-exit! summary true (str "Argument Error: " (str/join \newline errors)))
-      :default (let [arg-inputs (map file-reader args)
-                     ; TODO: test for stdin-as-TTY better, e.g., http://stackoverflow.com/a/41576107
-                     stdin-is-tty? (.ready ^java.io.Reader *in*)
-                     inputs (if stdin-is-tty?
-                              (conj (BufferedFileReader. "/dev/stdin" *in*) arg-inputs)
-                              arg-inputs)]
-                 (->> options
-                      ; convert options map to list of key-value tuples
-                      (apply concat)
-                      ; command-fn takes options as rest-args
-                      (apply command-fn inputs)
-                      (interpose (str \newline))
-                      (map (fn [^String line] (.write *out* line)))
-                      (dorun))))
+      :default (run-command! command-fn args options))
     ; weirdly, System/out doesn't always get automatically flushed
     (.flush *out*)))

@@ -9,22 +9,6 @@
   [f kvs]
   (into {} (for [[k v] kvs] [k (f v)])))
 
-(defprotocol ReadableFile
-  "general representation of a readable resource carrying a filename"
-  (getName [this] "get the name of the file backing this resource")
-  (read [this] "read a single character"))
-
-; based on line-seq from standard library
-(defn char-seq
-  "Returns characters from rdr as a lazy sequence of strings."
-  [rdr]
-  ; .read: returns "The character read, as an integer [...],
-  ; or -1 if the end of the stream has been reached"
-  (lazy-seq
-    (let [chr (.read rdr)]
-      (when-not (neg? chr)
-        (cons (char chr) (char-seq rdr))))))
-
 (defn normalize-nfc
   "NFC-normalize the given string"
   [s]
@@ -74,7 +58,7 @@
   "Test that the given stream can be parsed as BibTeX"
   [input]
   (try
-    ; parse the input char-seq, non-lazily, to catch any potential errors
+    ; parse the input character sequence non-lazily, to catch any potential errors
     (let [items (-> input bibtex/read-all doall)]
       ; it's not "BibTeX" if the only items are Gloss instances
       (some? (seq (remove :lines items))))

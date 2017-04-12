@@ -4,6 +4,10 @@
             [clojure.string :as str]
             [bartleby.cli :as cli]))
 
+(defn- resource->named-reader
+  [name]
+  (cli/->NamedReader name (io/reader (io/resource name))))
+
 (deftest test-main-exits
   (with-redefs [cli/exit! identity]
     (testing "help"
@@ -38,13 +42,13 @@
 
 (deftest test-cat
   (let [command-fn (:cat cli/commands)
-        inputs (-> "examples/multi/paper.bib" io/resource io/reader list)
+        inputs (-> "examples/multi/paper.bib" resource->named-reader list)
         items (command-fn inputs)]
     (is (= 4 (count items)))))
 
 (deftest test-cat-remove-fields
   (let [command-fn (:cat cli/commands)
-        inputs (-> "examples/multi/paper.bib" io/resource io/reader list)
+        inputs (-> "examples/multi/paper.bib" resource->named-reader list)
         blacklist #{"pages" "url"}
         items (command-fn inputs :remove-fields blacklist)
         first-item (first items)]
@@ -56,20 +60,20 @@
         filenames ["examples/multi/paper.bib"
                    "examples/multi/paper.aux"
                    "examples/multi/paper.tex"]
-        inputs (map #(-> % io/resource cli/file-reader) filenames)
+        inputs (map resource->named-reader filenames)
         items (command-fn inputs)]
     (is (= 2 (count items)))))
 
 (deftest test-json
   (let [command-fn (:json cli/commands)
-        inputs (-> "examples/multi/paper.bib" io/resource io/reader list)
+        inputs (-> "examples/multi/paper.bib" resource->named-reader list)
         items (command-fn inputs)]
     (is (= 4 (count items)))
     (is (every? #(str/starts-with? % "{") items))))
 
 (deftest test-json-remove-fields
   (let [command-fn (:json cli/commands)
-        inputs (-> "examples/multi/paper.bib" io/resource io/reader list)
+        inputs (-> "examples/multi/paper.bib" resource->named-reader list)
         blacklist #{"pages" "url"}
         items (command-fn inputs :remove-fields blacklist)
         first-item (first items)]
@@ -79,7 +83,7 @@
 (deftest test-test
   (let [command-fn (:test cli/commands)
         filenames ["examples/multi/paper.bib" "examples/multi/paper.aux"]
-        inputs (map #(-> % io/resource cli/file-reader) filenames)
+        inputs (map resource->named-reader filenames)
         [bib-line aux-line] (command-fn inputs)]
     (is (= "yes" bib-line))
     (is (= "no" aux-line))))
