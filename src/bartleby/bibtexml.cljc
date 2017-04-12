@@ -1,5 +1,5 @@
 (ns bartleby.bibtexml
-  (:require [clojure.string :as string]
+  (:require [clojure.string :as str]
             [clojure.data.xml :refer [uri-symbol element element* xml-comment]]
             [clojure.data.xml.protocols :refer [AsElements as-elements]])
   (:import (bartleby.bibliography Field Reference Gloss)))
@@ -15,7 +15,7 @@
 (extend-protocol AsElements
   Field
   (as-elements [{:keys [key value]}]
-    [(element (bibtexml-qname (string/lower-case key)) {} value)])
+    [(element (bibtexml-qname (str/lower-case key)) {} value)])
   Reference
   (as-elements [{:keys [pubtype citekey fields]}]
     [(element (bibtexml-qname :entry) {}
@@ -24,7 +24,7 @@
         (as-elements fields)))])
   Gloss
   (as-elements [{:keys [lines]}]
-    [(xml-comment (string/join \newline lines))]))
+    [(xml-comment (str/join \newline lines))]))
 
 (defn file-element
   "create a <bibtex:file> data.xml element containing the given entries"

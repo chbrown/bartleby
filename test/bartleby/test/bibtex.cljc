@@ -1,7 +1,7 @@
 (ns bartleby.test.bibtex
   (:require [clojure.test :refer :all]
             [clojure.java.io :as io]
-            [clojure.string :as string]
+            [clojure.string :as str]
             [clojure.data.json :as json]
             [the.parsatron :refer [run]]
             [bartleby.language.tex :as tex]
@@ -21,14 +21,14 @@
 (def pairs-bibfiles (->> (io/resource "resources/pairs")
                          (io/file)
                          (.list)
-                         (filter #(string/ends-with? % ".bib"))
-                         (remove #(string/includes? % "with-strings"))
+                         (filter #(str/ends-with? % ".bib"))
+                         (remove #(str/includes? % "with-strings"))
                          (map #(str "pairs/" %))))
 
 (deftest test-bibtex-parser
   (doseq [bibfile pairs-bibfiles]
     (testing (str "parsing " bibfile " into json equivalent")
-      (let [jsonfile (string/replace bibfile ".bib" ".json")
+      (let [jsonfile (str/replace bibfile ".bib" ".json")
             ; is io/resource utf-8 by default?
             actual (-> bibfile io/resource slurp bibtex/read-str bibliography/toJSON normalize-json)
             expected (-> jsonfile io/resource slurp json/read-str)]

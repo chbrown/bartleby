@@ -1,5 +1,5 @@
 (ns bartleby.transforms
-  (:require [clojure.string :as string]
+  (:require [clojure.string :as str]
             [bartleby.core :as core]
             [bartleby.bibliography :as bibliography]))
 
@@ -13,10 +13,10 @@
   "If there is a colon in a (book)title field, and no existing sub(book)title,
   remove the subtitle from the field's value and put it in a new field"
   [fields]
-  (let [existing-keys (->> fields (map :key) (map string/lower-case) set)]
+  (let [existing-keys (->> fields (map :key) (map str/lower-case) set)]
     (->> (for [field fields
                :let [subkey (key->subkey (:key field))]]
-           (if (and subkey (not (existing-keys (string/lower-case subkey))))
+           (if (and subkey (not (existing-keys (str/lower-case subkey))))
              ; this is a splittable field that has not already been split
              (bibliography/split-field field subkey)
              ; this field cannot be split

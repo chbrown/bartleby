@@ -1,5 +1,5 @@
 (ns bartleby.cli
-  (:require [clojure.string :as string]
+  (:require [clojure.string :as str]
             [clojure.data.json :as json :refer [JSONWriter]]
             [clojure.data.xml :as xml]
             [clojure.tools.cli :refer [parse-opts]]
@@ -37,14 +37,14 @@
 
 (defn- input->items
   [{:keys [name reader]}]
-  (when (string/ends-with? name ".bib")
+  (when (str/ends-with? name ".bib")
     (-> reader core/char-seq bibtex/read-all)))
 
 (defn- input->citekeys
   [{:keys [name reader]}]
   (cond
-    (string/ends-with? name ".tex") (-> reader slurp core/tex->citekeys)
-    (string/ends-with? name ".aux") (-> reader slurp core/aux->citekeys)
+    (str/ends-with? name ".tex") (-> reader slurp core/tex->citekeys)
+    (str/ends-with? name ".aux") (-> reader slurp core/aux->citekeys)
     :default []))
 
 (defn- select-cited-from-inputs
@@ -130,7 +130,7 @@
 (defn interpolate-command
   "Replace literal names with cite commands, given .tex and .bib file(s)"
   [inputs & options]
-  (let [input-tex? (fn [{:keys [name reader]}] (or (= name "/dev/stdin") (string/ends-with? name ".tex")))
+  (let [input-tex? (fn [{:keys [name reader]}] (or (= name "/dev/stdin") (str/ends-with? name ".tex")))
         items (mapcat input->items inputs)
         references (filter :citekey items)]
     (->> inputs
@@ -157,7 +157,7 @@
         command-fmt (str "  %-" command-name-max-length "s %s")]
     (->> (for [[command-key command-fn] commands]
            (format command-fmt (name command-key) (:doc (meta command-fn))))
-         (string/join \newline))))
+         (str/join \newline))))
 
 (def cli-options
   [[nil "--trailing-comma" "Include optional trailing comma after last field"
@@ -182,7 +182,7 @@
     :id :remove-fields
     :default #{}
     ; downcase (and split on ",", which is not documented for now)
-    :parse-fn #(-> % string/lower-case (string/split #","))
+    :parse-fn #(-> % str/lower-case (str/split #","))
     ; support multiple applications
     :assoc-fn (fn [m k v] (update m k into v))]
    ["-t" "--transform NAME" "Transform entries with operation NAME; this argument can be repeated"
@@ -232,7 +232,7 @@
       (nil? command-fn) (print-info-and-exit! summary true (str "ArgumentError: unrecognized command '" command "'"))
       ; clojure.tools.cli/parse-opts may include a vector of error message strings in :errors
       ; if the cli parser encountered any errors (nil implies success)
-      errors (print-info-and-exit! summary true (str "Argument Error: " (string/join \newline errors)))
+      errors (print-info-and-exit! summary true (str "Argument Error: " (str/join \newline errors)))
       :default (let [arg-inputs (map file-reader args)
                      ; TODO: test for stdin-as-TTY better, e.g., http://stackoverflow.com/a/41576107
                      stdin-is-tty? (.ready ^java.io.Reader *in*)

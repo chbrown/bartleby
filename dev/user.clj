@@ -1,7 +1,7 @@
 (ns user
   (:refer-clojure :exclude [char]) ; avoid warning against parsatron overriding (char)
   (:require [clojure.java.io :as io]
-            [clojure.string :as string]
+            [clojure.string :as str]
             [clojure.pprint :refer [pprint]]
             ; [clojure.repl :refer :all]
             [clojure.tools.namespace.repl :refer [refresh refresh-all]]

@@ -1,6 +1,6 @@
 (ns bartleby.core
   (:refer-clojure :exclude [read])
-  (:require [clojure.string :as string]
+  (:require [clojure.string :as str]
             [bartleby.language.bibtex :as bibtex]
             [bartleby.language.tex :as tex]))
 
@@ -34,7 +34,7 @@
 (defn collapse-space
   "Replace all sequences of whitespace with a single space"
   [s]
-  (string/replace s #"\s+" " "))
+  (str/replace s #"\s+" " "))
 
 (defn wrap
   "Wrap the string s in left and right padding"
@@ -47,8 +47,8 @@
   * remove any non- letter/number/some punctuation characters"
   [s]
   (-> s
-      (string/replace #"^[^A-Za-z_:]" "_$0")
-      (string/replace #"[^A-Za-z0-9._:-]" "")))
+      (str/replace #"^[^A-Za-z_:]" "_$0")
+      (str/replace #"[^A-Za-z0-9._:-]" "")))
 
 (defn tex->citekeys
   "Extract the citekeys in a TeX document (using regular expressions)"
@@ -59,9 +59,9 @@
   ; TODO: find out if there's a better (for-cat [binding] ...) idiom in the std lib?
   (->> (for [[_ citekey-csv] (re-seq #"\\\w*cite\w*\{([^}]+)\}" s)]
          ; split each csv multicite \*cite*{albert:1995,brumhilda:1990,etc} into its component parts
-         (string/split citekey-csv #","))
+         (str/split citekey-csv #","))
        (apply concat)
-       (map string/trim)))
+       (map str/trim)))
 
 (defn aux->citekeys
   "Extract the citekeys in an aux document (using regular expressions)"
@@ -87,7 +87,7 @@
         crossref-citekeys (->> items
                                (filter #(contains? citekeys (:citekey %))) ; find selected items
                                (mapcat :fields) ; flatten out to selected items' fields
-                               (filter #(= (string/lower-case (:key %)) "crossref")) ; find crossref fields (case-insensitive)
+                               (filter #(= (str/lower-case (:key %)) "crossref")) ; find crossref fields (case-insensitive)
                                (map :value) ; get field value
                                (set))
         all-citekeys (into citekeys crossref-citekeys)]
@@ -101,28 +101,28 @@
 (defn split-fullname
   "Parse fullname into a [given-names surname] (or just [given-names]) vector"
   [fullname]
-  (let [[prefix suffix] (string/split fullname #"\s*,\s+" 2)]
+  (let [[prefix suffix] (str/split fullname #"\s*,\s+" 2)]
     (if suffix
       ; handling manually comma-separated names is easy
       [suffix prefix]
       ; it's a little trickier if there was no comma
       ; TODO: handle von, da, del, etc.
-      (let [parts (string/split prefix #"\s+")]
+      (let [parts (str/split prefix #"\s+")]
         (if (> (count parts) 2)
-          [(string/join \space (butlast parts)) (last parts)]
+          [(str/join \space (butlast parts)) (last parts)]
           parts)))))
 
 (defn reorder-name
   "standardize name parts from a single BibTeX chunk of a list of authors"
   [s]
-  (let [parts (string/split s #"," 2) ; handle comma-separated names
-        recombined (string/join \space (reverse parts))] ; no-op if there was no comma
-    (string/split recombined #"\s+")))
+  (let [parts (str/split s #"," 2) ; handle comma-separated names
+        recombined (str/join \space (reverse parts))] ; no-op if there was no comma
+    (str/split recombined #"\s+")))
 
 (defn author->lastnames
   "get last names from BibTeX format"
   [author-value]
-  (->> (string/split author-value #"\s+and\s+")
+  (->> (str/split author-value #"\s+and\s+")
        (map reorder-name)
        (map last)))
 
@@ -132,11 +132,11 @@
   ; [A] -> 'A'
   ; [A, B] -> 'A and B'
   ; [A, B, C] -> 'A, B and C' (no Oxford comma)
-  (string/join " and "
+  (str/join " and "
     (if (> (count names) 2)
       ; group 1: take all but the last name, join those elements with a comma
       ; group 2: simply take the last name
-      [(string/join ", " (butlast names)) (last names)]
+      [(str/join ", " (butlast names)) (last names)]
       names)))
 
 (defn reference->replacements
@@ -159,7 +159,7 @@
         :output (format "\\citep{%s}" citekey)
         :priority 100}])))
 
-(defn re-escape [s] (string/replace s #"([.*+?^=!:${}()|[\\]/\\])" "\\\\$1"))
+(defn re-escape [s] (str/replace s #"([.*+?^=!:${}()|[\\]/\\])" "\\\\$1"))
 
 (defn interpolate
   "replace literal names (plaintext citations) with TeX cite commands for recognized names"
@@ -170,7 +170,7 @@
   [tex-string references]
   (let [replacements (sort-by :priority (mapcat reference->replacements references))
         matches (map :match replacements)
-        all-matches-pattern (re-pattern (string/join \| (map re-escape matches)))]
-    (string/replace tex-string all-matches-pattern
+        all-matches-pattern (re-pattern (str/join \| (map re-escape matches)))]
+    (str/replace tex-string all-matches-pattern
       (fn [group0]
         (get (->> replacements (filter #(= (:match %) group0)) first) :output (str "no output found for '" group0 "'"))))))

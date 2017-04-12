@@ -1,5 +1,5 @@
 (ns bartleby.bibliography
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as str]))
 
 (defprotocol ToJSON
   (toJSON [this] "Convert this into a (flat) JSON-friendly structure"))
@@ -14,10 +14,10 @@
   and return both; otherwise return a singleton vector of the original field"
   [field suffix-key]
   (let [{:keys [key value]} field
-        [prefix suffix] (string/split value #":" 2)]
+        [prefix suffix] (str/split value #":" 2)]
     (if suffix
-      [(Field. key (string/trimr prefix))
-       (Field. suffix-key (string/triml suffix))]
+      [(Field. key (str/trimr prefix))
+       (Field. suffix-key (str/triml suffix))]
       [field])))
 
 (defrecord Reference [pubtype citekey fields]
@@ -49,4 +49,4 @@
   [reference & fields-to-remove]
   (let [blacklist (set fields-to-remove)]
     (update reference :fields (fn [fields]
-      (remove #(-> % :key string/lower-case blacklist) fields)))))
+      (remove #(-> % :key str/lower-case blacklist) fields)))))

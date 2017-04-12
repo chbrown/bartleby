@@ -1,6 +1,6 @@
 (ns bartleby.language.bibtex
   (:refer-clojure :exclude [char comment read]) ; avoid warning about parsatron overriding (char)
-  (:require [clojure.string :as string]
+  (:require [clojure.string :as str]
             [the.parsatron :refer :all]
             [bartleby.bibliography :refer [->Field ->Reference ->Gloss]]
             [bartleby.language.common :refer :all])
@@ -61,9 +61,9 @@
   (let->> [chars (until-escapable \")]
     (let [s (apply str chars)
           ; unescaped quotes
-          raw (string/replace s #"\\\"" "\"")
+          raw (str/replace s #"\\\"" "\"")
           ; escaped braces
-          escaped (string/replace raw #"[{}]" "\\\\$0")]
+          escaped (str/replace raw #"[{}]" "\\\\$0")]
       (always escaped))))
 
 (defn number-literal
@@ -178,12 +178,12 @@
   (-format [{:keys [pubtype citekey fields]}]
     ; omit citekey (and the comma after) if citekey is nil
     (str \@ pubtype \{ (some-> citekey (str \,)) \newline
-         (string/join (str \, \newline) (map -format fields))
+         (str/join (str \, \newline) (map -format fields))
          (when *trailing-comma?* \,) (when *trailing-newline?* \newline)
          \} \newline))
   Gloss
   (-format [{:keys [lines]}]
-    (string/join \newline lines)))
+    (str/join \newline lines)))
 
 (defn write-str
   "Convert bibliography item into BibTeX-formatted string"

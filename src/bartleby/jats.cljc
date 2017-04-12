@@ -1,5 +1,5 @@
 (ns bartleby.jats
-  (:require [clojure.string :as string]
+  (:require [clojure.string :as str]
             [bartleby.core :refer [split-fullname wrap xml-name]]
             [clojure.data.xml :refer [element xml-comment emit-str]]
             [clojure.data.xml.protocols :refer [AsElements as-elements]])
@@ -18,21 +18,21 @@
 
 (defn- as-name-elements
   [bibtexnames]
-  (->> (string/split bibtexnames #"\s+and\s+")
-       (map string/trim)
+  (->> (str/split bibtexnames #"\s+and\s+")
+       (map str/trim)
        (map as-name-element)))
 
 (defn- as-fpage-lpage-elements
   [pages]
   ; split on hyphens, n-dashes, or m-dashes
-  (map #(element %1 {} %2) [:fpage :lpage] (string/split pages #"[-–—]+" 2)))
+  (map #(element %1 {} %2) [:fpage :lpage] (str/split pages #"[-–—]+" 2)))
 
 (defn- create-comment
   "pad content with spaces and escape contents if needed"
   [content]
   (-> content
-      (string/trim)
-      (string/replace #"-{2,}" "–") ; replace any sequences of multiple hyphens with a single n-dash
+      (str/trim)
+      (str/replace #"-{2,}" "–") ; replace any sequences of multiple hyphens with a single n-dash
       (wrap " ")
       (xml-comment)))
 
@@ -65,7 +65,7 @@
 (extend-protocol AsElements
   Field
   (as-elements [{:keys [key value]}]
-    (list (if-let [value-element (get field-mapping (keyword (string/lower-case key)))]
+    (list (if-let [value-element (get field-mapping (keyword (str/lower-case key)))]
             (value-element value)
             (create-comment (str key " = " value)))))
   Reference
@@ -75,7 +75,7 @@
               (as-elements fields)))))
   Gloss
   (as-elements [{:keys [lines]}]
-    (list (create-comment (string/join \newline lines)))))
+    (list (create-comment (str/join \newline lines)))))
 
 (defn write-str
   "Produce JATS XML skeleton with /article/back/ref-list/ref elements"
