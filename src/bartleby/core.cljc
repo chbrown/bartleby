@@ -32,8 +32,23 @@
      :cljs (.normalize s "NFC")))
 
 (defn collapse-space
+  "Replace all sequences of whitespace with a single space"
   [s]
   (string/replace s #"\s+" " "))
+
+(defn wrap
+  "Wrap the string s in left and right padding"
+  ([s both] (wrap s both both))
+  ([s left right] (str left s right)))
+
+(defn xml-name
+  "Sanitize the string s into a valid XML name.
+  * prefix with underscore if the first character is not a valid first character
+  * remove any non- letter/number/some punctuation characters"
+  [s]
+  (-> s
+      (string/replace #"^[^A-Za-z_:]" "_$0")
+      (string/replace #"[^A-Za-z0-9._:-]" "")))
 
 (defn tex->citekeys
   "Extract the citekeys in a TeX document (using regular expressions)"

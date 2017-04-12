@@ -1,6 +1,6 @@
 (ns bartleby.jats
   (:require [clojure.string :as string]
-            [bartleby.core :refer [split-fullname]]
+            [bartleby.core :refer [split-fullname wrap xml-name]]
             [clojure.data.xml :refer [element xml-comment emit-str]]
             [clojure.data.xml.protocols :refer [AsElements as-elements]])
   (:import [bartleby.bibliography Field Reference Gloss]))
@@ -27,22 +27,18 @@
   ; split on hyphens, n-dashes, or m-dashes
   (map #(element %1 {} %2) [:fpage :lpage] (string/split pages #"[-–—]+" 2)))
 
-(defn- wrap-str
-  [s wrapping]
-  (str wrapping s wrapping))
-
 (defn- create-comment
   "pad content with spaces and escape contents if needed"
   [content]
   (-> content
       (string/trim)
       (string/replace #"-{2,}" "–") ; replace any sequences of multiple hyphens with a single n-dash
-      (wrap-str " ")
+      (wrap " ")
       (xml-comment)))
 
 ; mapping from keywordified Field. :key values to (fn [value] ...element(s)...)
 (def ^:private field-mapping {:address #(element :publisher-loc {} %)
-                              :author #(as-name-elements %)
+                              :author #(element :person-group {:person-group-type "author"} (as-name-elements %))
                               :booktitle #(element :source {} %)
                               :day #(element :day {} %)
                               :doi #(element :pub-id {:pub-id-type "doi"} %)
@@ -74,7 +70,7 @@
             (create-comment (str key " = " value)))))
   Reference
   (as-elements [{:keys [pubtype citekey fields]}]
-    (list (element :ref {:id citekey}
+    (list (element :ref {:id (xml-name citekey)}
             (element :element-citation {:publication-type pubtype}
               (as-elements fields)))))
   Gloss
