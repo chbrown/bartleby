@@ -51,7 +51,7 @@
 
 (deftest test-examples
   (let [filename "examples/multi/paper.bib"
-        input (-> filename io/resource io/reader core/char-seq)]
+        input (-> filename io/resource io/reader slurp)]
     (testing "multi syntax"
       (is (core/bibtex? input)))
     (testing "multi"
