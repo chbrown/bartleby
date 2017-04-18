@@ -3,5 +3,5 @@ jdk:
   - oraclejdk8
 lein: 2.7.1
 script:
-  - lein cloverage --coveralls
+  - lein cloverage --coveralls --ns-exclude-regex user --ns-exclude-regex bartleby.test.*
   - curl -F 'json_file=@target/coverage/coveralls.json' 'https://coveralls.io/api/v1/jobs'
