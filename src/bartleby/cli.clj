@@ -4,7 +4,6 @@
             [clojure.data.xml :as xml]
             [clojure.tools.cli :refer [parse-opts]]
             [bartleby.core :as core]
-            [bartleby.transforms :refer [compose-transforms-by-name]]
             [bartleby.language.bibtex :as bibtex]
             [bartleby.language.jats :as jats]
             [bartleby.bibliography :as bibliography]
@@ -63,13 +62,13 @@
 (defn cat-command
   "Parse the input BibTeX file(s) and reformat as a stream of BibTeX, with minimal changes"
   [inputs & options]
-  (let [{:keys [transforms remove-fields]} options]
+  (let [{:keys [extract-subtitles remove-fields]} options]
     (->> inputs
          (map :reader)
          (map char-seq)
          (mapcat bibtex/read-all)
          (map #(apply bibliography/remove-fields % remove-fields))
-         (map (compose-transforms-by-name transforms))
+         (map #(cond-> % extract-subtitles (bibliography/extract-subtitles)))
          (map #(apply bibtex/write-str % options)))))
 
 (defn select-command
@@ -182,10 +181,9 @@
     :parse-fn #(-> % str/lower-case (str/split #","))
     ; support multiple applications
     :assoc-fn (fn [m k v] (update m k into v))]
-   ["-t" "--transform NAME" "Transform entries with operation NAME; this argument can be repeated"
-    :id :transforms
-    :default []
-    :assoc-fn (fn [m k v] (update m k conj v))]
+   [nil "--extract-subtitles" "Extract (book)title subtitles into sub(book)title field"
+    :id :extract-subtitles
+    :default false]
    ["-h" "--help"]
    ["-v" "--version"]])
 

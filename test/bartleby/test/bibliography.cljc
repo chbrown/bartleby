@@ -1,6 +1,5 @@
 (ns bartleby.test.bibliography
   (:require [clojure.test :refer :all]
-            [bartleby.transforms :as transforms]
             [bartleby.bibliography :as bibliography])
   (:import (bartleby.bibliography Field Reference Gloss)))
 
@@ -19,13 +18,13 @@
   (testing "extracting subtitles of already split field"
     (let [fields [(Field. "title" "All of Everything: More or Less")
                   (Field. "subtitle" "Something Specific")]]
-      (is (= fields (#'transforms/fields-extract-subtitles fields)))))
+      (is (= fields (#'bibliography/fields-extract-subtitles fields)))))
   (testing "extracting subtitles of non-title field"
     (let [fields [(Field. "journal" "Science: The Comment Sections")]]
-      (is (= fields (#'transforms/fields-extract-subtitles fields)))))
+      (is (= fields (#'bibliography/fields-extract-subtitles fields)))))
   (testing "extracting subtitles of already sub* field"
     (let [fields [(Field. "subtitle" "All or None: Some")]]
-      (is (= fields (#'transforms/fields-extract-subtitles fields))))))
+      (is (= fields (#'bibliography/fields-extract-subtitles fields))))))
 
 (deftest test-fromJSON
   (testing "parsing Gloss"
