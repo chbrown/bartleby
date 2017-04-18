@@ -3,6 +3,14 @@
             [bartleby.bibliography :as bibliography])
   (:import (bartleby.bibliography Field Reference Gloss)))
 
+(deftest test-title-case
+  (is (= "Lowercase" (bibliography/title-case "lowercase")))
+  (is (= "Uppercase" (bibliography/title-case "UPPERCASE")))
+  (is (= "Mixedcase" (bibliography/title-case "MiXedcAsE")))
+  (is (= "Lower Case" (bibliography/title-case "lower case")))
+  (is (= "Upper Case" (bibliography/title-case "UPPER CASE")))
+  (is (= "Mixed Case" (bibliography/title-case "MiXed cAsE"))))
+
 (deftest test-split-field
   (testing "splitting splittable field"
     (let [field (Field. "title" "All of Everything: Something Specific")
