@@ -6,7 +6,7 @@
             [bartleby.core :as core]
             [bartleby.transforms :refer [compose-transforms-by-name]]
             [bartleby.language.bibtex :as bibtex]
-            [bartleby.jats :as jats]
+            [bartleby.language.jats :as jats]
             [bartleby.bibliography :as bibliography]
             [clojure.java.io :as io])
   (:import (bartleby.bibliography ToJSON))

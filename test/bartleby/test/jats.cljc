@@ -1,7 +1,7 @@
 (ns bartleby.test.jats
   (:require [clojure.test :refer :all]
             [clojure.string :as str]
-            [bartleby.jats :as jats]
+            [bartleby.language.jats :as jats]
             [bartleby.bibliography :refer [->Field ->Reference ->Gloss]]))
 
 (deftest test-write-str

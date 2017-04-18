@@ -1,4 +1,4 @@
-(ns bartleby.jats
+(ns bartleby.language.jats
   (:require [clojure.string :as str]
             [bartleby.core :refer [split-fullname wrap xml-name]]
             [clojure.data.xml :refer [element xml-comment emit emit-str]]
