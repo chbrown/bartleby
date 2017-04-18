@@ -11,6 +11,13 @@
   (is (= "Upper Case" (bibliography/title-case "UPPER CASE")))
   (is (= "Mixed Case" (bibliography/title-case "MiXed cAsE"))))
 
+(deftest test-match-case
+  (is (= "sample" (bibliography/match-case "SAMPLE" "lowercase")))
+  (is (= "SAMPLE" (bibliography/match-case "sample" "UPPERCASE")))
+  (is (= "Sample text" (bibliography/match-case "Sample Text" "Capitalized text")))
+  (is (= "Sample Text" (bibliography/match-case "sample text" "Title Case")))
+  (is (= "SaMpLe" (bibliography/match-case "SaMpLe" "MiXeD"))))
+
 (deftest test-split-field
   (testing "splitting splittable field"
     (let [field (Field. "title" "All of Everything: Something Specific")
