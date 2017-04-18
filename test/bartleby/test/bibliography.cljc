@@ -29,7 +29,11 @@
           subkey "subtitle"]
       (is (= [(Field. "title" "Just the Facts")] (bibliography/split-field field subkey))))))
 
-(deftest test-extract-subtitles
+(deftest test-fields-extract-subtitles
+  (testing "extracting subtitles of splittable fields"
+    (let [fields [(Field. "booktitle" "All of Everything: More or Less")]]
+      (is (= [(Field. "booktitle" "All of Everything")
+              (Field. "booksubtitle" "More or Less")] (#'bibliography/fields-extract-subtitles fields)))))
   (testing "extracting subtitles of already split field"
     (let [fields [(Field. "title" "All of Everything: More or Less")
                   (Field. "subtitle" "Something Specific")]]
