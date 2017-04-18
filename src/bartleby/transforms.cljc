@@ -38,9 +38,8 @@
   "Run item's fields through fields-extract-subtitles if it's a Reference,
   otherwise, return item unchanged"
   [item]
-  (if (bibliography/Reference? item)
-    (update item :fields fields-extract-subtitles)
-    item))
+  (cond-> item
+    (bibliography/Reference? item) (update :fields fields-extract-subtitles)))
 
 (defn- create-throwable
   [^String message]
