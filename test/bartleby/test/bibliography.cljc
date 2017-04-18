@@ -29,6 +29,15 @@
           subkey "subtitle"]
       (is (= [(Field. "title" "Just the Facts")] (bibliography/split-field field subkey))))))
 
+(deftest test-extract-subtitles
+  (testing "extracting subtitles of gloss"
+    (let [gloss (Gloss. "Note to self: read this")]
+      (is (= gloss (bibliography/extract-subtitles gloss)))))
+  (testing "extracting subtitles of reference"
+    (let [reference (Reference. "book" "benjamin" [(Field. "title" "A: B")])]
+      (is (= (Reference. "book" "benjamin" [(Field. "title" "A") (Field. "subtitle" "B")])
+             (bibliography/extract-subtitles reference))))))
+
 (deftest test-fields-extract-subtitles
   (testing "extracting subtitles of splittable fields"
     (let [fields [(Field. "booktitle" "All of Everything: More or Less")]]
