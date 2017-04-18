@@ -68,6 +68,15 @@ Delete .bib file entries not used in LaTeX document:
 I've also compiled my own [guide / reference / notes](Parsatron.md) for the `parsatron` library.
 
 
+## Development
+
+### Testing
+
+Run the following to exclude dev/test from [cloverage](https://github.com/cloverage/cloverage)'s report:
+
+    lein cloverage --ns-exclude-regex user --ns-exclude-regex bartleby.test.*
+
+
 ## Release instructions
 
 ### Cutting and deploying a new version
