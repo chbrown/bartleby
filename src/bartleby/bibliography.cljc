@@ -2,6 +2,10 @@
   (:require [clojure.string :as str]))
 
 (defprotocol ToJSON
+  "Complex data structures to be transformed before serializing as JSON should
+  implement this protocol to facilitate cross-platform use.
+  Then, in platform-dependent code, this protocol can be extended to implement
+  that platform's JSON serialization protocol (e.g., JSONWriter)."
   (toJSON [this] "Convert this into a (flat) JSON-friendly structure"))
 
 (defrecord Field [key value]
@@ -14,7 +18,10 @@
   (toJSON [this]
     (into {"pubtype" pubtype, "citekey" citekey} (map toJSON fields))))
 
-(def Reference? (partial instance? Reference))
+(defn Reference?
+  "Return true if r is an instance of the Reference class"
+  [r]
+  (instance? Reference r))
 
 (defrecord Gloss [lines]
   ToJSON
@@ -22,21 +29,21 @@
     {"lines" lines}))
 
 (defn fromJSON
+  "Convert object into an instance of either Reference or Gloss,
+  depending on whether they key \"pubtype\" is present in object"
   [object]
   (if (contains? object "pubtype")
-    ; (map->Reference object)
     (let [pubtype (get object "pubtype")
           citekey (get object "citekey")
           fields-map (dissoc object "pubtype" "citekey")
           fields (map (fn [[key value]] (Field. key value)) fields-map)]
       (Reference. pubtype citekey fields))
-    ; (map->Gloss object)
     (Gloss. (get object "lines"))))
 
 (defn remove-fields
-  "Remove fields matching fields-to-remove from the reference's list of fields"
-  [reference & fields-to-remove]
-  (let [blacklist (set fields-to-remove)]
+  "Remove all of the fields in reference that have a key that occurs in the collection matching-keys"
+  [reference & matching-keys]
+  (let [blacklist (set matching-keys)]
     (update reference :fields (fn [fields]
       (remove #(-> % :key str/lower-case blacklist) fields)))))
 
@@ -58,7 +65,7 @@
     s))
 
 (defn split-field
-  "If field contains a colon, move the bit after the colon into a new field
+  "If field's value contains a colon, move the content after the colon into a new field
   and return both; otherwise return a singleton vector of the original field"
   [field suffix-key]
   (let [{:keys [key value]} field
@@ -69,8 +76,6 @@
       [field])))
 
 (defn- fields-extract-subtitles
-  "If there is a colon in a (book)title field, and no existing sub(book)title,
-  remove the subtitle from the field's value and put it in a new field"
   [fields]
   (let [existing-keys (->> fields (map :key) (map str/lower-case) set)]
     ; have to flat map over the transformer since splits result in multiple fields
@@ -83,8 +88,9 @@
                   (split-field field subkey)))) fields)))
 
 (defn extract-subtitles
-  "Run item's fields through fields-extract-subtitles if it's a Reference,
-  otherwise, return item unchanged"
+  "If item is an instance of Reference, and there is a colon in a (book)title
+  field and no existing sub(book)title, remove the subtitle from the field's
+  value and insert a new field with that value; otherwise, return item unchanged."
   [item]
   (cond-> item
     (Reference? item) (update :fields fields-extract-subtitles)))

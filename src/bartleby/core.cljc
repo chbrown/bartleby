@@ -5,18 +5,18 @@
             [bartleby.language.tex :as tex]))
 
 (defn map-values
-  "contruct a new map with all the values of the given map passed through f"
+  "Contruct a new map with all the values of the map kvs passed through f"
   [f kvs]
   (into {} (for [[k v] kvs] [k (f v)])))
 
 (defn normalize-nfc
-  "NFC-normalize the given string"
+  "NFC-normalize the string s"
   [s]
   #?(:clj (java.text.Normalizer/normalize s java.text.Normalizer$Form/NFC)
      :cljs (.normalize s "NFC")))
 
 (defn collapse-space
-  "Replace all sequences of whitespace with a single space"
+  "Replace all sequences of whitespace in s with a single space"
   [s]
   (str/replace s #"\s+" " "))
 
@@ -27,15 +27,15 @@
 
 (defn xml-name
   "Sanitize the string s into a valid XML name.
-  * prefix with underscore if the first character is not a valid first character
-  * remove any non- letter/number/some punctuation characters"
+  * Prefix with underscore if the first character is not a valid first character.
+  * Remove any non- letter/number/some punctuation characters."
   [s]
   (-> s
       (str/replace #"^[^A-Za-z_:]" "_$0")
       (str/replace #"[^A-Za-z0-9._:-]" "")))
 
 (defn tex->citekeys
-  "Extract the citekeys in a TeX document (using regular expressions)"
+  "Extract the citekeys from the TeX document string s (using regular expressions)"
   [s]
   ; super-simple regular expression solution (doesn't detect commented-out citations)
   ; re-seq returns a sequence of vectors, each N-groups long. We want the second group (the first captured group).
@@ -48,14 +48,14 @@
        (map str/trim)))
 
 (defn aux->citekeys
-  "Extract the citekeys in an aux document (using regular expressions)"
+  "Extract the citekeys from the TeX auxiliary-file string s (using regular expressions)"
   [s]
   ; BibLaTeX uses \abx@aux@cite{...}, BibTeX uses \bibcite{...}; we find either one:
   (for [[_ command citekey] (re-seq #"\\(abx@aux@cite|bibcite)\{([^}]+)\}" s)]
     citekey))
 
 (defn bibtex?
-  "Test that the given stream can be parsed as BibTeX"
+  "Test that the input can be parsed as BibTeX"
   [input]
   (try
     ; parse the input character sequence non-lazily, to catch any potential errors
@@ -65,7 +65,7 @@
     (catch Exception e false)))
 
 (defn expand-citekeys
-  "recurse into crossref fields to find all used citekeys"
+  "Recurse into crossref fields to find all used citekeys"
   [items citekeys]
   (let [citekeys (set citekeys)
         crossref-citekeys (->> items
@@ -83,7 +83,8 @@
       (expand-citekeys items all-citekeys))))
 
 (defn split-fullname
-  "Parse fullname into a [given-names surname] (or just [given-names]) vector"
+  "Parse the string fullname into a vector of [given-names surname],
+  or just [given-names] if no surname is given."
   [fullname]
   (let [[prefix suffix] (str/split fullname #"\s*,\s+" 2)]
     (if suffix
@@ -97,25 +98,26 @@
           parts)))))
 
 (defn reorder-name
-  "standardize name parts from a single BibTeX chunk of a list of authors"
+  "Reorder comma-separated 'Lastname, Firstname' into 'Firstname Lastname'
+  or return unchanged if there is no comma in s."
   [s]
   (let [parts (str/split s #"," 2) ; handle comma-separated names
         recombined (str/join \space (reverse parts))] ; no-op if there was no comma
     (str/split recombined #"\s+")))
 
 (defn author->lastnames
-  "get last names from BibTeX format"
-  [author-value]
-  (->> (str/split author-value #"\s+and\s+")
+  "Get last names from BibTeX-formatted author string s"
+  [s]
+  (->> (str/split s #"\s+and\s+")
        (map reorder-name)
        (map last)))
 
 (defn format-names
-  "join a seq of (last-)names as it would normally be formatted"
+  "Join a collection of (last-)names as they would naturally be formatted.
+  [A]         ->   A
+  [A, B]      ->   A and B
+  [A, B, C]   ->   A, B and C (no Oxford comma)"
   [names]
-  ; [A] -> 'A'
-  ; [A, B] -> 'A and B'
-  ; [A, B, C] -> 'A, B and C' (no Oxford comma)
   (str/join " and "
     (if (> (count names) 2)
       ; group 1: take all but the last name, join those elements with a comma
@@ -124,8 +126,11 @@
       names)))
 
 (defn reference->replacements
-  [{:keys [citekey fields]}]
-  (let [author (some->> fields (filter #(= (:key %) "author")) first :value author->lastnames format-names)
+  "Generate sequence of replacement maps from the Reference r,
+  with :match, :output, and :priority keys."
+  [r]
+  (let [{:keys [citekey fields]} r
+        author (some->> fields (filter #(= (:key %) "author")) first :value author->lastnames format-names)
         year (->> fields (filter #(= (:key %) "year")) first :value)]
     (when (and author year)
       ; priority is so that greedier replacements happen first
@@ -143,18 +148,23 @@
         :output (format "\\citep{%s}" citekey)
         :priority 100}])))
 
-(defn re-escape [s] (str/replace s #"([.*+?^=!:${}()|[\\]/\\])" "\\\\$1"))
+(defn re-escape
+  "Escape any regular expression syntax characters in s such that the result can be
+  embedded in a regular expression, but will only match literally equivalent strings."
+  [s]
+  (str/replace s #"([.*+?^=!:${}()|[\\]/\\])" "\\\\$1"))
 
 (defn interpolate
-  "replace literal names (plaintext citations) with TeX cite commands for recognized names"
+  "Replace literal names (plaintext citations) in the TeX document string tex with
+  cite* commands, for names that are recognized by patterns generated from references."
   ; also need to support:
   ;   oxford commas
   ;   '&' as author separator instead of 'and'
   ;   et. al instead of all authors listed out
-  [tex-string references]
+  [tex references]
   (let [replacements (sort-by :priority (mapcat reference->replacements references))
         matches (map :match replacements)
         all-matches-pattern (re-pattern (str/join \| (map re-escape matches)))]
-    (str/replace tex-string all-matches-pattern
+    (str/replace tex all-matches-pattern
       (fn [group0]
         (get (->> replacements (filter #(= (:match %) group0)) first) :output (str "no output found for '" group0 "'"))))))

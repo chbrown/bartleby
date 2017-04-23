@@ -128,6 +128,7 @@
     (always (apply str characters))))
 
 (defn gloss
+  "Capture inter-entry content in BibTeX, returning a Gloss record"
   []
   (let->> [lines (many1 (gloss-line))]
     (always (->Gloss lines))))
@@ -141,24 +142,25 @@
       (choice (reference)
               (gloss))))
 
-; similar to clojure.data.json (http://clojure.github.io/data.json/),
+; similar to clojure.data.json (https://clojure.github.io/data.json/),
 ; the primary API consists of the functions read(-str) and write(-str)
 
 (defn read
-  "read the first bibliography item from the given stream of BibTeX characters"
+  "Reads a single bibliography item from the BibTeX reader"
   [reader]
   (run (item) reader))
 
 (defn read-str
-  "read the first bibliography item from the given string of BibTeX"
-  [s]
+  "Reads one bibliography item from the BibTeX string"
+  [string]
   ; TODO: convert s to decomplected (generic b/w clj and cljs) reader first?
-  (read s))
+  (read string))
 
 (defn read-all
-  [s]
+  "Read input to the end, returning all bibliography items."
+  [input]
   (run-seq (item)
-           (>> whitespace (eof)) s))
+           (>> whitespace (eof)) input))
 
 ;;; BIBTEX WRITER
 
@@ -168,6 +170,7 @@
 (def ^{:dynamic true :private true} *=-padded?*)
 
 (defprotocol BibTeXFormatter
+  "Handle formatting of bibliography items into BibTeX strings"
   (-format [this] "Format this as a BibTeX string"))
 
 (extend-protocol BibTeXFormatter
