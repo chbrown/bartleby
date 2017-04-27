@@ -20,4 +20,4 @@
              :dev {:source-paths ["dev" "test"]
                    :resource-paths ["test/resources"]
                    :dependencies [[org.clojure/tools.namespace "0.3.0-alpha3"]]
-                   :main user}})
+                   :repl-options {:init-ns user}}})
