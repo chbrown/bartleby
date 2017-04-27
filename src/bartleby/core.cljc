@@ -64,24 +64,6 @@
       (some? (seq (remove :lines items))))
     (catch Exception e false)))
 
-(defn expand-citekeys
-  "Recurse into crossref fields to find all used citekeys"
-  [items citekeys]
-  (let [citekeys (set citekeys)
-        crossref-citekeys (->> items
-                               (filter #(contains? citekeys (:citekey %))) ; find selected items
-                               (mapcat :fields) ; flatten out to selected items' fields
-                               (filter #(= (str/lower-case (:key %)) "crossref")) ; find crossref fields (case-insensitive)
-                               (map :value) ; get field value
-                               (set))
-        all-citekeys (into citekeys crossref-citekeys)]
-    ; if there are no new citekeys in all-citekeys (and thus, in crossref-citekeys), we're done
-    (if (= all-citekeys citekeys)
-      citekeys
-      ; if there are new citekeys in crossref-citekeys, recurse.
-      ; there should only be one level of crossrefs, maybe two; more than that is pathological
-      (expand-citekeys items all-citekeys))))
-
 (defn split-fullname
   "Parse the string fullname into a vector of [given-names surname],
   or just [given-names] if no surname is given."

@@ -4,13 +4,6 @@
             [bartleby.core :as core])
   (:import (bartleby.bibliography Field Reference)))
 
-(deftest test-expand-citekeys
-  (let [items [(Reference. "incollection" "zara" [(Field. "title" "Unrelated")])
-               (Reference. "incollection" "adams" [(Field. "crossref" "benjamin")])
-               (Reference. "book" "benjamin" [(Field. "title" "Related")])]
-        expanded-citekeys (core/expand-citekeys items ["adams"])]
-    (is (= #{"adams" "benjamin"} expanded-citekeys))))
-
 (deftest test-citekeys
   (testing "extraction from tex"
     (let [actual (-> "examples/multi/paper.tex" io/resource slurp core/tex->citekeys)

@@ -19,6 +19,13 @@
     (is (= (Reference. "book" "benjamin" [(Field. "title" "Reason")])
            (bibliography/fromJSON {"pubtype" "book", "citekey" "benjamin", "title" "Reason"})))))
 
+(deftest test-expand-citekeys
+  (let [items [(Reference. "incollection" "zara" [(Field. "title" "Unrelated")])
+               (Reference. "incollection" "adams" [(Field. "crossref" "benjamin")])
+               (Reference. "book" "benjamin" [(Field. "title" "Related")])]
+        expanded-citekeys (bibliography/expand-citekeys items ["adams"])]
+    (is (= #{"adams" "benjamin"} expanded-citekeys))))
+
 (deftest test-title-case
   (is (= "Lowercase" (bibliography/title-case "lowercase")))
   (is (= "Uppercase" (bibliography/title-case "UPPERCASE")))

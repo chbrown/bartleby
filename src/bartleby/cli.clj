@@ -54,7 +54,7 @@
   [inputs]
   (let [items (mapcat input->items inputs)
         direct-citekeys (mapcat input->citekeys inputs)
-        citekeys (core/expand-citekeys items direct-citekeys)
+        citekeys (bibliography/expand-citekeys items direct-citekeys)
         ; only keep items that are references that have been cited, or are not references
         keep? (fn [item] (or (nil? (:citekey item)) (contains? citekeys (:citekey item))))]
     (filter keep? items)))

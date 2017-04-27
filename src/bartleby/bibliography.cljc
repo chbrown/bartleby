@@ -40,6 +40,27 @@
       (Reference. pubtype citekey fields))
     (Gloss. (get object "lines"))))
 
+(defn expand-citekeys
+  "Recurse into crossref fields to find all used citekeys"
+  [items citekeys]
+  (loop [citekeys-set (set citekeys)]
+    (let [extended-citekeys-set (->> items
+                                     ; find the items indicated by citekeys
+                                     (filter #(contains? citekeys-set (:citekey %)))
+                                     ; flatten out to selected items' fields
+                                     (mapcat :fields)
+                                     ; find crossref fields (case-insensitive)
+                                     (filter #(= (str/lower-case (:key %)) "crossref"))
+                                     ; get field value
+                                     (map :value)
+                                     (set)
+                                     (into citekeys-set))]
+      ; if no new citekeys have been added to extended-citekeys-set, we're done
+      (if (= citekeys-set extended-citekeys-set)
+        extended-citekeys-set
+        ; if there are new citekeys in crossref-citekeys, recurse
+        (recur extended-citekeys-set)))))
+
 (defn remove-fields
   "Remove all of the fields in reference that have a key that occurs in the collection matching-keys"
   [reference & matching-keys]
