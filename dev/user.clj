@@ -1,18 +1,12 @@
 (ns user
-  (:refer-clojure :exclude [char]) ; avoid warning against parsatron overriding (char)
-  (:require [clojure.java.io :as io]
+  (:require [clojure.repl :refer :all]
+            [clojure.pprint :refer [pp pprint print-table]]
             [clojure.string :as str]
-            [clojure.pprint :refer [pprint]]
-            ; [clojure.repl :refer :all]
-            [clojure.tools.namespace.repl :refer [refresh refresh-all]]
-            [clojure.test :as test]
-            [the.parsatron :as parsatron] ; [the.parsatron :refer :all]
+            [clojure.java.io :as io]
+            [the.parsatron :as parsatron]
             [bartleby.core :as core]
             [bartleby.language.bibtex :as bibtex]
             [bartleby.language.tex :as tex]
-            [bartleby.language.common :as common])
-  (:gen-class))
+            [clojure.tools.namespace.repl :refer [refresh refresh-all]]))
 
-(defn -main
-  []
-  (println "Running :dev user/main"))
+(println "📕  Loading /dev/user 📖")
