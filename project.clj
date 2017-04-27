@@ -1,4 +1,4 @@
-(defproject bartleby/bartleby "0.7.0"
+(defproject bartleby/bartleby "0.7.1"
   :description "Faithful (Bib)TeX manipulation"
   :url "https://github.com/chbrown/bartleby"
   :license {:name "MIT"
@@ -12,8 +12,7 @@
             [lein-cloverage "1.0.9"]
             [lein-codox "0.10.3"]]
   :main bartleby.cli
-  :deploy-repositories [["releases" {:url "https://clojars.org/repo"
-                                     :sign-releases false}]]
+  :deploy-repositories [["releases" :clojars]]
   :codox {:source-paths ["src"] ; exclude dev/ and test/
           :source-uri "https://github.com/chbrown/bartleby/blob/v{version}/{filepath}#L{line}"}
   :profiles {:uberjar {:aot :all}
