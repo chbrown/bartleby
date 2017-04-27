@@ -49,7 +49,7 @@
 (deftest test-cat-remove-fields
   (let [command-fn (:cat cli/commands)
         inputs (-> "examples/multi/paper.bib" resource->named-reader list)
-        blacklist #{"pages" "url"}
+        blacklist ["pages" "url"]
         items (command-fn inputs :remove-fields blacklist)
         first-item (first items)]
     (is (false? (str/includes? first-item "pages")))
@@ -73,7 +73,7 @@
 (deftest test-json-remove-fields
   (let [command-fn (:json cli/commands)
         inputs (-> "examples/multi/paper.bib" resource->named-reader list)
-        blacklist #{"pages" "url"}
+        blacklist ["pages" "url"]
         items (command-fn inputs :remove-fields blacklist)
         first-item (first items)]
     (is (false? (str/includes? first-item "pages")))

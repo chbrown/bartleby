@@ -166,9 +166,9 @@
     :parse-fn not]
    [nil "--remove-field KEY" "Omit fields from output (case-insensitively); this argument can be repeated"
     :id :remove-fields
-    :default #{}
-    ; downcase (and split on ",", which is not documented for now)
-    :parse-fn #(-> % str/lower-case (str/split #","))
+    :default nil
+    ; split on "," (which is not documented for now)
+    :parse-fn #(str/split % #",")
     ; support multiple applications
     :assoc-fn (fn [m k v] (update m k into v))]
    [nil "--select AUX_OR_TEX" "Keep only entries that occur in this .aux or .tex file; this argument can be repeated"

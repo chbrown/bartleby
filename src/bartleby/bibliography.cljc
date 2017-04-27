@@ -62,9 +62,10 @@
         (recur extended-citekeys-set)))))
 
 (defn remove-fields
-  "Remove all of the fields in reference that have a key that occurs in the collection matching-keys"
+  "Remove all of the fields in reference that have a key that occurs in
+  matching-keys, which will be all lower-cased and converted to a set."
   [reference & matching-keys]
-  (let [blacklist (set matching-keys)]
+  (let [blacklist (->> matching-keys (map str/lower-case) set)]
     (update reference :fields (fn [fields]
       (remove #(-> % :key str/lower-case blacklist) fields)))))
 
