@@ -3,6 +3,22 @@
             [bartleby.bibliography :as bibliography])
   (:import (bartleby.bibliography Field Reference Gloss)))
 
+(deftest test-toJSON
+  (testing "JSONifying Gloss"
+    (is (= {"lines" ["1" "2"]}
+           (bibliography/toJSON (Gloss. ["1" "2"])))))
+  (testing "JSONifying Reference"
+    (is (= {"pubtype" "book", "citekey" "benjamin", "title" "Reason"}
+           (bibliography/toJSON (Reference. "book" "benjamin" [(Field. "title" "Reason")]))))))
+
+(deftest test-fromJSON
+  (testing "parsing Gloss"
+    (is (= (Gloss. ["1" "2"])
+           (bibliography/fromJSON {"lines" ["1" "2"]}))))
+  (testing "parsing Reference"
+    (is (= (Reference. "book" "benjamin" [(Field. "title" "Reason")])
+           (bibliography/fromJSON {"pubtype" "book", "citekey" "benjamin", "title" "Reason"})))))
+
 (deftest test-title-case
   (is (= "Lowercase" (bibliography/title-case "lowercase")))
   (is (= "Uppercase" (bibliography/title-case "UPPERCASE")))
@@ -29,15 +45,6 @@
           subkey "subtitle"]
       (is (= [(Field. "title" "Just the Facts")] (bibliography/split-field field subkey))))))
 
-(deftest test-extract-subtitles
-  (testing "extracting subtitles of gloss"
-    (let [gloss (Gloss. "Note to self: read this")]
-      (is (= gloss (bibliography/extract-subtitles gloss)))))
-  (testing "extracting subtitles of reference"
-    (let [reference (Reference. "book" "benjamin" [(Field. "title" "A: B")])]
-      (is (= (Reference. "book" "benjamin" [(Field. "title" "A") (Field. "subtitle" "B")])
-             (bibliography/extract-subtitles reference))))))
-
 (deftest test-fields-extract-subtitles
   (testing "extracting subtitles of splittable fields"
     (let [fields [(Field. "booktitle" "All of Everything: More or Less")]]
@@ -54,18 +61,11 @@
     (let [fields [(Field. "subtitle" "All or None: Some")]]
       (is (= fields (#'bibliography/fields-extract-subtitles fields))))))
 
-(deftest test-fromJSON
-  (testing "parsing Gloss"
-    (is (= (Gloss. ["1" "2"])
-           (bibliography/fromJSON {"lines" ["1" "2"]}))))
-  (testing "parsing Reference"
-    (is (= (Reference. "book" "benjamin" [(Field. "title" "Reason")])
-           (bibliography/fromJSON {"pubtype" "book", "citekey" "benjamin", "title" "Reason"})))))
-
-(deftest test-toJSON
-  (testing "JSONifying Gloss"
-    (is (= {"lines" ["1" "2"]}
-           (bibliography/toJSON (Gloss. ["1" "2"])))))
-  (testing "JSONifying Reference"
-    (is (= {"pubtype" "book", "citekey" "benjamin", "title" "Reason"}
-           (bibliography/toJSON (Reference. "book" "benjamin" [(Field. "title" "Reason")]))))))
+(deftest test-extract-subtitles
+  (testing "extracting subtitles of gloss"
+    (let [gloss (Gloss. "Note to self: read this")]
+      (is (= gloss (bibliography/extract-subtitles gloss)))))
+  (testing "extracting subtitles of reference"
+    (let [reference (Reference. "book" "benjamin" [(Field. "title" "A: B")])]
+      (is (= (Reference. "book" "benjamin" [(Field. "title" "A") (Field. "subtitle" "B")])
+             (bibliography/extract-subtitles reference))))))
