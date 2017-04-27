@@ -1,13 +1,13 @@
 (ns bartleby.cli
   (:require [clojure.string :as str]
+            [clojure.java.io :as io]
             [clojure.data.json :as json :refer [JSONWriter]]
             [clojure.data.xml :as xml]
-            [clojure.tools.cli :refer [parse-opts]]
             [bartleby.core :as core]
             [bartleby.language.bibtex :as bibtex]
             [bartleby.language.jats :as jats]
             [bartleby.bibliography :as bibliography]
-            [clojure.java.io :as io])
+            [clojure.tools.cli :refer [parse-opts]])
   (:import (bartleby.bibliography ToJSON))
   (:gen-class))
 
@@ -38,82 +38,63 @@
         (cons (char chr) (char-seq rdr))))))
 
 (defn- input->items
-  [{:keys [name reader]}]
-  (when (str/ends-with? name ".bib")
-    (-> reader char-seq bibtex/read-all)))
+  "Parse input (a NamedReader) as BibTeX and read all bibliography items"
+  [input]
+  (-> input :reader char-seq bibtex/read-all))
 
 (defn- input->citekeys
-  [{:keys [name reader]}]
+  "Find all the citekeys referenced by input (a NamedReader)"
+  [input]
   (cond
-    (str/ends-with? name ".tex") (-> reader slurp core/tex->citekeys)
-    (str/ends-with? name ".aux") (-> reader slurp core/aux->citekeys)
-    :default []))
+    (str/ends-with? (:name input) ".tex") (-> (:reader input) slurp core/tex->citekeys)
+    (str/ends-with? (:name input) ".aux") (-> (:reader input) slurp core/aux->citekeys)
+    :default nil))
 
-(defn- select-cited-from-inputs
-  "Select only the cited entries from a bibliography, given a list of .tex and .bib files"
-  [inputs]
-  (let [items (mapcat input->items inputs)
-        direct-citekeys (mapcat input->citekeys inputs)
-        citekeys (bibliography/expand-citekeys items direct-citekeys)
-        ; only keep items that are references that have been cited, or are not references
-        keep? (fn [item] (or (nil? (:citekey item)) (contains? citekeys (:citekey item))))]
-    (filter keep? items)))
+(defn- transform-items
+  [options items]
+  (let [{:keys [select-files remove-fields extract-subtitles]} options
+        ; find the citekeys from a list of .tex / .aux files
+        select-citekeys (->> select-files
+                             (mapcat input->citekeys)
+                             ; expand to include crossref keys
+                             (bibliography/expand-citekeys items))]
+    (cond->> items
+      ; keep each item if it is not a reference, or if it is a reference,
+      ; AND selected-citekeys is not empty, its citekey must be in selected-citekeys
+      (seq select-citekeys) (filter (fn [item]
+                                      (or (not (bibliography/Reference? item))
+                                          (contains? select-citekeys (:citekey item)))))
+      ; remove blacklisted fields from each reference
+      (seq remove-fields) (map #(apply bibliography/remove-fields % remove-fields))
+      ; extract subtitles
+      extract-subtitles (map bibliography/extract-subtitles))))
 
 (defn cat-command
   "Parse the input BibTeX file(s) and reformat as a stream of BibTeX, with minimal changes"
   [inputs & options]
-  (let [{:keys [extract-subtitles remove-fields]} options]
-    (->> inputs
-         (map :reader)
-         (map char-seq)
-         (mapcat bibtex/read-all)
-         (map #(apply bibliography/remove-fields % remove-fields))
-         (map #(cond-> % extract-subtitles (bibliography/extract-subtitles)))
-         (map #(apply bibtex/write-str % options)))))
-
-(defn select-command
-  "Filter out unused entries, given one or more .bib files and one or more .aux/.tex files"
-  [inputs & options]
-  (let [{:keys [remove-fields]} options]
-    (->> inputs
-         (select-cited-from-inputs)
-         (map #(apply bibliography/remove-fields % remove-fields))
-         (map #(apply bibtex/write-str % options)))))
+  (->> inputs
+       (mapcat input->items)
+       (transform-items options)
+       (map #(apply bibtex/write-str % options))))
 
 (defn json-command
   "Parse BibTeX and output each component as JSON"
   [inputs & options]
-  (let [{:keys [remove-fields]} options]
-    (->> inputs
-         (map :reader)
-         (map char-seq)
-         (mapcat bibtex/read-all)
-         (map #(apply bibliography/remove-fields % remove-fields))
-         (map json/write-str))))
+  (->> inputs
+       (mapcat input->items)
+       (transform-items options)
+       (map json/write-str)))
 
 (defn json2bib-command
   "Parse JSON-LD and output as standard formatted BibTeX"
   [inputs & options]
-  (let [{:keys [remove-fields]} options]
-    (->> inputs
-         (map :reader)
-         (mapcat line-seq)
-         (map json/read-str)
-         (map bibliography/fromJSON)
-         (map #(apply bibliography/remove-fields % remove-fields))
-         (map #(apply bibtex/write-str % options)))))
-
-(defn jats-command
-  "Parse BibTeX and output each component as JATS XML"
-  [inputs & options]
-  (let [{:keys [remove-fields]} options]
-    (->> inputs
-         (map :reader)
-         (map char-seq)
-         (mapcat bibtex/read-all)
-         (map #(apply bibliography/remove-fields % remove-fields))
-         (jats/write-str)
-         (list))))
+  (->> inputs
+       (map :reader)
+       (mapcat line-seq)
+       (map json/read-str)
+       (map bibliography/fromJSON)
+       (transform-items options)
+       (map #(apply bibtex/write-str % options))))
 
 (defn test-command
   "Test each file in args and output the ones that are not valid BibTeX"
@@ -125,27 +106,36 @@
        (map #(if (core/bibtex? %) "yes" "no"))))
 
 (defn interpolate-command
-  "Replace literal names with cite commands, given .tex and .bib file(s)"
+  "Replace literal names with cite commands, given .tex and .bib files"
   [inputs & options]
-  (let [input-tex? (fn [{:keys [name reader]}] (or (= name "/dev/stdin") (str/ends-with? name ".tex")))
-        items (mapcat input->items inputs)
-        references (filter :citekey items)]
+  (let [references (->> inputs
+                        (filter #(str/ends-with? (:name %) ".bib"))
+                        (mapcat input->items)
+                        (filter bibliography/Reference?))]
     (->> inputs
-         (filter input-tex?)
+         (filter #(or (= (:name %) "/dev/stdin") (str/ends-with? (:name %) ".tex")))
          (map :reader)
          (map slurp)
          (map #(core/interpolate % references)))))
+
+(defn jats-command
+  "Parse BibTeX and output each component as JATS XML"
+  [inputs & options]
+  (->> inputs
+       (mapcat input->items)
+       (transform-items options)
+       (jats/write-str)
+       (list)))
 
 ; each command should take (inputs & options) and return a seq of lines
 ; the #' reader macro enables access to the function's metadata later
 ; but doesn't prevent us from calling the function directly as usual
 (def commands {:cat #'cat-command
-               :select #'select-command
-               :interpolate #'interpolate-command
                :json #'json-command
                :json2bib #'json2bib-command
-               :jats #'jats-command
-               :test #'test-command})
+               :test #'test-command
+               :interpolate #'interpolate-command
+               :jats #'jats-command})
 
 (defn- summarize-commands
   [commands]
@@ -181,6 +171,11 @@
     :parse-fn #(-> % str/lower-case (str/split #","))
     ; support multiple applications
     :assoc-fn (fn [m k v] (update m k into v))]
+   [nil "--select AUX_OR_TEX" "Keep only entries that occur in this .aux or .tex file; this argument can be repeated"
+    :id :select-files
+    :default nil
+    :parse-fn #(NamedReader. % (io/reader %))
+    :assoc-fn (fn [m k v] (update m k conj v))]
    [nil "--extract-subtitles" "Extract (book)title subtitles into sub(book)title field"
     :id :extract-subtitles
     :default false]

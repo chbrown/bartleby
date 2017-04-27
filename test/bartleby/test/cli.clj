@@ -55,13 +55,12 @@
     (is (false? (str/includes? first-item "pages")))
     (is (false? (str/includes? first-item "URL")))))
 
-(deftest test-select
-  (let [command-fn (:select cli/commands)
-        filenames ["examples/multi/paper.bib"
-                   "examples/multi/paper.aux"
-                   "examples/multi/paper.tex"]
-        inputs (map resource->named-reader filenames)
-        items (command-fn inputs)]
+(deftest test-cat-select-files
+  (let [command-fn (:cat cli/commands)
+        inputs (-> "examples/multi/paper.bib" resource->named-reader list)
+        select-files (map resource->named-reader ["examples/multi/paper.aux"
+                                                  "examples/multi/paper.tex"])
+        items (command-fn inputs :select-files select-files)]
     (is (= 2 (count items)))))
 
 (deftest test-json
