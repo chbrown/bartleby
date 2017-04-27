@@ -238,13 +238,13 @@
         [command & args] arguments
         command-fn (get commands (keyword command))]
     (cond
-      (:help options) (print-info-and-exit! summary true)
+      (:help options)    (print-info-and-exit! summary true)
       (:version options) (print-info-and-exit! summary false)
-      (nil? command) (print-info-and-exit! summary true "ArgumentError: you must supply a command")
-      (nil? command-fn) (print-info-and-exit! summary true (str "ArgumentError: unrecognized command '" command "'"))
+      (nil? command)     (print-info-and-exit! summary true "ArgumentError: you must supply a command")
+      (nil? command-fn)  (print-info-and-exit! summary true (str "ArgumentError: unrecognized command '" command "'"))
       ; clojure.tools.cli/parse-opts may include a vector of error message strings in :errors
       ; if the cli parser encountered any errors (nil implies success)
-      errors (print-info-and-exit! summary true (str "Argument Error: " (str/join \newline errors)))
-      :default (run-command! command-fn args options))
+      errors             (print-info-and-exit! summary true (str "Argument Error: " (str/join \newline errors)))
+      :default           (run-command! command-fn args options))
     ; weirdly, System/out doesn't always get automatically flushed
     (.flush *out*)))
