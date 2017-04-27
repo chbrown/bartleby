@@ -45,12 +45,13 @@
   (testing "splitting splittable field"
     (let [field (Field. "title" "All of Everything: Something Specific")
           subkey "subtitle"]
-      (is (= [(Field. "title" "All of Everything")
-              (Field. "subtitle" "Something Specific")] (bibliography/split-field field subkey)))))
+      (is (= (list (Field. "title" "All of Everything") (Field. "subtitle" "Something Specific"))
+             (bibliography/split-field field subkey)))))
   (testing "splitting unsplittable field"
     (let [field (Field. "title" "Just the Facts")
           subkey "subtitle"]
-      (is (= [(Field. "title" "Just the Facts")] (bibliography/split-field field subkey))))))
+      (is (= (list (Field. "title" "Just the Facts"))
+             (bibliography/split-field field subkey))))))
 
 (deftest test-fields-extract-subtitles
   (testing "extracting subtitles of splittable fields"

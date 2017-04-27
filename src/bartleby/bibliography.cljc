@@ -92,9 +92,9 @@
   (let [{:keys [key value]} field
         [prefix suffix] (str/split value #":" 2)]
     (if suffix
-      [(Field. key (str/trimr prefix))
-       (Field. suffix-key (str/triml suffix))]
-      [field])))
+      (list (Field. key (str/trimr prefix))
+            (Field. suffix-key (str/triml suffix)))
+      (list field))))
 
 (defn- fields-extract-subtitles
   [fields]
