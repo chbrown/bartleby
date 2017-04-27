@@ -79,19 +79,11 @@
           [(str/join \space (butlast parts)) (last parts)]
           parts)))))
 
-(defn reorder-name
-  "Reorder comma-separated 'Lastname, Firstname' into 'Firstname Lastname'
-  or return unchanged if there is no comma in s."
-  [s]
-  (let [parts (str/split s #"," 2) ; handle comma-separated names
-        recombined (str/join \space (reverse parts))] ; no-op if there was no comma
-    (str/split recombined #"\s+")))
-
 (defn author->lastnames
-  "Get last names from BibTeX-formatted author string s"
-  [s]
-  (->> (str/split s #"\s+and\s+")
-       (map reorder-name)
+  "Get last names from BibTeX-formatted author string fullnames"
+  [fullnames]
+  (->> (str/split fullnames #"\s+and\s+")
+       (map split-fullname)
        (map last)))
 
 (defn format-names
