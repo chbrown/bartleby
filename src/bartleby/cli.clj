@@ -146,7 +146,10 @@
          (str/join \newline))))
 
 (def cli-options
-  [[nil "--trailing-comma" "Include optional trailing comma after last field"
+  [[nil "--indentation STRING" "String to indent each field line with"
+    :id :indentation
+    :default "  "]
+   [nil "--trailing-comma" "Include optional trailing comma after last field"
     :id :trailing-comma?
     :default true]
    [nil "--no-trailing-comma" "Omit optional trailing comma after last field"
