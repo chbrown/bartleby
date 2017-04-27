@@ -91,6 +91,7 @@ Then add a tag and push:
 
 Finally, deploy to [Clojars](https://clojars.org/):
 
+    # export GPG_TTY=$(tty) # uncomment if gpg fails with "Inappropriate ioctl"
     lein deploy
 
 * _TODO_: customize `:release-tasks` and use `lein release :major / :minor / :patch`
