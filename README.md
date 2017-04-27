@@ -127,13 +127,13 @@ Upload the built files:
 
 Create a fresh clone from the `gh-pages` branch:
 
+    rev=$(git rev-parse --short master)
     repo=${TMPDIR-/tmp/}bartleby-gh-pages
     git clone git@github.com:chbrown/bartleby.git -b gh-pages $repo
 
 Now, back in this repo on the `master` branch, generate the documentation directly into that clone:
 
     lein update-in :codox assoc :output-path \"$repo\" -- codox
-    rev=$(git rev-parse --short master)
 
 Then go to that repo's directory, commit the changes with a message pointing to the current commit on `master`, and push:
 
