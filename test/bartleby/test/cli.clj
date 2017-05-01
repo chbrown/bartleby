@@ -86,3 +86,11 @@
         [bib-line aux-line] (command-fn inputs)]
     (is (= "yes" bib-line))
     (is (= "no" aux-line))))
+
+(deftest test-interpolate
+  (let [command-fn (:interpolate cli/commands)
+        filenames ["examples/literal/raw.bib" "examples/literal/raw.tex"]
+        inputs (map resource->named-reader filenames)
+        items (command-fn inputs)]
+    (is (= "We saw most recently in \\citealt{littlemore} that the efforts of \\citet{vital-etal} were not what they seemed \\citep{adamsdonut}.\n"
+           (first items)))))
