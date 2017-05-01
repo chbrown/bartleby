@@ -208,8 +208,7 @@
       (println commands-summary)
       (println))
     ; print any given (error) messages
-    (doseq [message messages]
-      (println message))
+    (run! println messages)
     ; exit explicitly & immediately
     (exit! (if messages 1 0))))
 
