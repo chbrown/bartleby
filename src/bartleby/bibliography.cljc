@@ -65,15 +65,16 @@
   "Remove all of the fields in reference that have a key that occurs in
   matching-keys, which will be all lower-cased and converted to a set."
   [reference & matching-keys]
-  (let [blacklist (->> matching-keys (map str/lower-case) set)]
-    (update reference :fields (fn [fields]
-      (remove #(-> % :key str/lower-case blacklist) fields)))))
+  (let [blacklist (set (map str/lower-case matching-keys))
+        blacklisted? (fn [field] (contains? blacklist (str/lower-case (:key field))))]
+    (update reference :fields (partial remove blacklisted?))))
 
 (defn title-case
   "Convert each word in s to title case, using a simple regular expression for detecting words"
   [s]
-  (str/replace (str/lower-case s) #"\b(\w)(\w*)"
-    (fn [[_ initial remainder]] (str (str/upper-case initial) (str/lower-case remainder)))))
+  (letfn [(replacer [[_ initial remainder]]
+            (str (str/upper-case initial) (str/lower-case remainder)))]
+    (str/replace (str/lower-case s) #"\b(\w)(\w*)" replacer)))
 
 (defn match-case
   "Change the case of s to match the case pattern of prototype.

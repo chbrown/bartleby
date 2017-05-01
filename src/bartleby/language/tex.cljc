@@ -3,21 +3,22 @@
   (:require [the.parsatron :refer :all]
             [bartleby.language.common :refer :all]))
 
-(def ^:private accent-commands {\` "\u0300"
-                                \' "\u0301"
-                                \^ "\u0302"
-                                \" "\u0308"
-                                \H "\u030B"
-                                \~ "\u0303"
-                                \c "\u0327"
-                                \k "\u0328"
-                                \= "\u0304"
-                                \b "\u0331"
-                                \. "\u0307"
-                                \d "\u0323"
-                                \r "\u030A"
-                                \u "\u0306"
-                                \v "\u030C"})
+(def ^:private accent-commands
+  {\` "\u0300"
+   \' "\u0301"
+   \^ "\u0302"
+   \" "\u0308"
+   \H "\u030B"
+   \~ "\u0303"
+   \c "\u0327"
+   \k "\u0328"
+   \= "\u0304"
+   \b "\u0331"
+   \. "\u0307"
+   \d "\u0323"
+   \r "\u030A"
+   \u "\u0306"
+   \v "\u030C"})
 (defn accent
   "Reads a TeX accent macro (like \\'a or \\\"{o}) and converts it to a proper
   Unicode string (like á or ö) using a combining character"
@@ -29,10 +30,11 @@
     ; the combining character goes after the character it modifies
     (always (str body (accent-commands command)))))
 
-(def ^:private fancy-character-commands {\l "\u0142"   ; l with stroke: ł
-                                         \o "\u00F8"   ; o with stroke: ø
-                                         \i "\u0131"   ; dotless i: ı
-                                         \j "\u0237"}) ; dotless j: ȷ
+(def ^:private fancy-character-commands
+  {\l "\u0142"   ; l with stroke: ł
+   \o "\u00F8"   ; o with stroke: ø
+   \i "\u0131"   ; dotless i: ı
+   \j "\u0237"}) ; dotless j: ȷ
 (defn fancy-character
   "Read a TeX special character macro (like \\i or \\o) and convert it to an
   equivalent Unicode string (like ı or ø)"

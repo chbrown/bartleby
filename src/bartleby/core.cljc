@@ -91,12 +91,11 @@
   [A, B]      ->   A and B
   [A, B, C]   ->   A, B and C (no Oxford comma)"
   [names]
-  (str/join " and "
-    (if (> (count names) 2)
-      ; group 1: take all but the last name, join those elements with a comma
-      ; group 2: simply take the last name
-      [(str/join ", " (butlast names)) (last names)]
-      names)))
+  (str/join " and " (if (> (count names) 2)
+                      ; group 1: take all but the final name, join those elements with a comma
+                      ; group 2: simply take the final name
+                      (list (str/join ", " (butlast names)) (last names))
+                      names)))
 
 (defn reference->replacements
   "Generate sequence of replacement maps from the Reference r,
@@ -136,8 +135,10 @@
   ;   et. al instead of all authors listed out
   [tex references]
   (let [replacements (sort-by :priority (mapcat reference->replacements references))
-        matches (map :match replacements)
-        all-matches-pattern (re-pattern (str/join \| (map re-escape matches)))]
-    (str/replace tex all-matches-pattern
-      (fn [group0]
-        (get (->> replacements (filter #(= (:match %) group0)) first) :output (str "no output found for '" group0 "'"))))))
+        ; prepare mapping from match string to output string
+        replacements-lookup (reduce #(assoc %1 (:match %2) (:output %2)) {} replacements)
+        all-matches-pattern (->> (map :match replacements)
+                                 (map re-escape)
+                                 (str/join \|)
+                                 (re-pattern))]
+    (str/replace tex all-matches-pattern #(get replacements-lookup % (str "no output found for '" % "'")))))
