@@ -46,6 +46,13 @@
         items (command-fn inputs)]
     (is (= 4 (count items)))))
 
+(deftest test-main-cat-remove-fields
+  (testing "from filepath"
+    (let [output (with-out-str (cli/-main "cat" "test/resources/examples/multi/paper.bib"
+                                          "--remove-field" "DOI,eprint"))]
+      (is (false? (str/includes? output "DOI")))
+      (is (false? (str/includes? output "eprint"))))))
+
 (deftest test-cat-remove-fields
   (let [command-fn (get cli/commands "cat")
         inputs (-> "examples/multi/paper.bib" resource->named-reader list)
