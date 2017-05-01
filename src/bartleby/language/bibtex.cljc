@@ -6,8 +6,7 @@
             [bartleby.language.common :refer [whitespace-chars whitespace linebreak
                                               maybe any-char-except-in any-char-except
                                               curly-braced double-quoted before run-seq]])
-  (:import (java.io Writer)
-           (bartleby.bibliography Field Reference Gloss)))
+  (:import (bartleby.bibliography Field Reference Gloss)))
 
 ;;; BIBTEX READER
 
@@ -206,5 +205,5 @@
 
 (defn write
   "Write BibTeX-formatted output to a java.io.Writer."
-  [item ^Writer writer & options]
+  [item ^java.io.Writer writer & options]
   (.write writer ^String (apply write-str item options)))
