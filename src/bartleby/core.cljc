@@ -35,16 +35,15 @@
       (str/replace #"[^A-Za-z0-9._:-]" "")))
 
 (defn tex->citekeys
-  "Extract the citekeys from the TeX document string s (using regular expressions)"
+  "Extract the citekeys from the TeX document string s. This uses simple
+  regular expressions and will capture commented-out citations as well."
   [s]
-  ; super-simple regular expression solution (doesn't detect commented-out citations)
-  ; re-seq returns a sequence of vectors, each N-groups long. We want the second group (the first captured group).
-  ; the (apply concat ...) flattens the results
-  ; TODO: find out if there's a better (for-cat [binding] ...) idiom in the std lib?
-  (->> (for [[_ citekey-csv] (re-seq #"\\\w*cite\w*\{([^}]+)\}" s)]
-         ; split each csv multicite \*cite*{albert:1995,brumhilda:1990,etc} into its component parts
-         (str/split citekey-csv #","))
-       (apply concat)
+  (->> (re-seq #"\\\w*cite\w*\{([^}]+)\}" s)
+       ; re-seq returns a sequence of vectors, each N-groups long;
+       ; we want the second group (the first captured group).
+       (map second)
+       ; split each csv multicite "adam:95,bron:1990" into its component parts
+       (mapcat #(str/split % #","))
        (map str/trim)))
 
 (defn aux->citekeys
