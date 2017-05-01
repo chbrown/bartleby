@@ -41,13 +41,13 @@
       (is (str/includes? output "@InProceedings{papineni-EtAl:2002:ACL")))))
 
 (deftest test-cat
-  (let [command-fn (:cat cli/commands)
+  (let [command-fn (get cli/commands "cat")
         inputs (-> "examples/multi/paper.bib" resource->named-reader list)
         items (command-fn inputs)]
     (is (= 4 (count items)))))
 
 (deftest test-cat-remove-fields
-  (let [command-fn (:cat cli/commands)
+  (let [command-fn (get cli/commands "cat")
         inputs (-> "examples/multi/paper.bib" resource->named-reader list)
         blacklist ["pages" "url"]
         items (command-fn inputs :remove-fields blacklist)
@@ -56,7 +56,7 @@
     (is (false? (str/includes? first-item "URL")))))
 
 (deftest test-cat-select-files
-  (let [command-fn (:cat cli/commands)
+  (let [command-fn (get cli/commands "cat")
         inputs (-> "examples/multi/paper.bib" resource->named-reader list)
         select-files (map resource->named-reader ["examples/multi/paper.aux"
                                                   "examples/multi/paper.tex"])
@@ -64,14 +64,14 @@
     (is (= 2 (count items)))))
 
 (deftest test-json
-  (let [command-fn (:json cli/commands)
+  (let [command-fn (get cli/commands "json")
         inputs (-> "examples/multi/paper.bib" resource->named-reader list)
         items (command-fn inputs)]
     (is (= 4 (count items)))
     (is (every? #(str/starts-with? % "{") items))))
 
 (deftest test-json-remove-fields
-  (let [command-fn (:json cli/commands)
+  (let [command-fn (get cli/commands "json")
         inputs (-> "examples/multi/paper.bib" resource->named-reader list)
         blacklist ["pages" "url"]
         items (command-fn inputs :remove-fields blacklist)
@@ -80,7 +80,7 @@
     (is (false? (str/includes? first-item "URL")))))
 
 (deftest test-test
-  (let [command-fn (:test cli/commands)
+  (let [command-fn (get cli/commands "test")
         filenames ["examples/multi/paper.bib" "examples/multi/paper.aux"]
         inputs (map resource->named-reader filenames)
         [bib-line aux-line] (command-fn inputs)]
@@ -88,7 +88,7 @@
     (is (= "no" aux-line))))
 
 (deftest test-interpolate
-  (let [command-fn (:interpolate cli/commands)
+  (let [command-fn (get cli/commands "interpolate")
         filenames ["examples/literal/raw.bib" "examples/literal/raw.tex"]
         inputs (map resource->named-reader filenames)
         items (command-fn inputs)]

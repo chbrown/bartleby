@@ -130,20 +130,19 @@
 ; each command should take (inputs & options) and return a seq of lines
 ; the #' reader macro enables access to the function's metadata later
 ; but doesn't prevent us from calling the function directly as usual
-(def commands {:cat #'cat-command
-               :json #'json-command
-               :json2bib #'json2bib-command
-               :test #'test-command
-               :interpolate #'interpolate-command
-               :jats #'jats-command})
+(def commands {"cat" #'cat-command
+               "json" #'json-command
+               "json2bib" #'json2bib-command
+               "test" #'test-command
+               "interpolate" #'interpolate-command
+               "jats" #'jats-command})
 
 (defn- summarize-commands
   [commands]
-  (let [command-name-max-length (->> commands keys (map name) (map count) (apply max))
-        command-fmt (str "  %-" command-name-max-length "s %s")]
-    (->> (for [[command-key command-fn] commands]
-           (format command-fmt (name command-key) (:doc (meta command-fn))))
-         (str/join \newline))))
+  (let [command-name-max-length (->> commands keys (map count) (apply max))
+        command-fmt (str "  %-" command-name-max-length "s %s")
+        format-command-kv #(format command-fmt (name (key %)) (:doc (meta (val %))))]
+    (str/join \newline (map format-command-kv commands))))
 
 (def cli-options
   [[nil "--indentation STRING" "String to indent each field line with"
@@ -193,7 +192,8 @@
 (defn- print-info-and-exit!
   [summary show-help & messages]
   (let [properties (resource->Properties "META-INF/maven/bartleby/bartleby/pom.properties")
-        version (get properties "version")]
+        version (get properties "version")
+        commands-summary (summarize-commands commands)]
     ; always print the 'bartleby <version>' banner
     (println "bartleby" version)
     ; print the full usage + options + commands help when show-help is true
@@ -205,7 +205,7 @@
       (println summary)
       (println)
       (println "Commands:")
-      (println (summarize-commands commands))
+      (println commands-summary)
       (println))
     ; print any given (error) messages
     (doseq [message messages]
@@ -234,7 +234,7 @@
   [& argv]
   (let [{:keys [options arguments errors summary] :as opts} (parse-opts argv cli-options)
         [command & args] arguments
-        command-fn (get commands (keyword command))]
+        command-fn (get commands command)]
     (cond
       (:help options)    (print-info-and-exit! summary true)
       (:version options) (print-info-and-exit! summary false)
