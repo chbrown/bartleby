@@ -3,7 +3,9 @@
   (:require [clojure.string :as str]
             [the.parsatron :refer :all]
             [bartleby.bibliography :refer [->Field ->Reference ->Gloss]]
-            [bartleby.language.common :refer :all])
+            [bartleby.language.common :refer [whitespace-chars whitespace linebreak
+                                              maybe any-char-except-in any-char-except
+                                              curly-braced double-quoted before run-seq]])
   (:import (java.io Writer)
            (bartleby.bibliography Field Reference Gloss)))
 

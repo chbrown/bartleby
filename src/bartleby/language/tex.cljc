@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [char read])
   (:require [clojure.string :as str]
             [the.parsatron :refer :all]
-            [bartleby.language.common :refer :all]))
+            [bartleby.language.common :refer [whitespace-chars any-char-except-in curly-braced]]))
 
 (def ^:private accent-commands
   {\` "\u0300"
