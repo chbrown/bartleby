@@ -1,6 +1,7 @@
 (ns bartleby.language.tex
   (:refer-clojure :exclude [char read])
-  (:require [the.parsatron :refer :all]
+  (:require [clojure.string :as str]
+            [the.parsatron :refer :all]
             [bartleby.language.common :refer :all]))
 
 (def ^:private accent-commands
@@ -80,7 +81,7 @@
 ; it returns a string with no TeX commands, escapes, or braces.
 (defparser block []
   (let->> [nodes (curly-braced (many (node)))]
-    (always (apply str nodes))))
+    (always (str/join nodes))))
 
 (defn node
   "Return a TeX tree string built by parsing and then generating TeX strings
@@ -100,8 +101,7 @@
 (defn read
   "Parse and simplify the TeX reader into a string of TeX"
   [reader]
-  (->> (run (many (node)) reader)
-       (apply str)))
+  (str/join (run (many (node)) reader)))
 
 (defn read-str
   "Parse and simplify a TeX string into a simplified string of TeX"

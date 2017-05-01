@@ -25,7 +25,7 @@
   i.e., a contiguous string of anything but whitespace, commas, and end braces."
   []
   (let->> [chars (many1 (any-char-except-in delimiter-chars))]
-    (always (apply str chars))))
+    (always (str/join chars))))
 
 ; tex-chunk and tex-block are mutually recursive
 (declare tex-block)
@@ -46,20 +46,20 @@
   enclosed in curly braces"
   []
   (let->> [chunks (many (tex-chunk))]
-    (always (str \{ (apply str chunks) \}))))
+    (always (str \{ (str/join chunks) \}))))
 
 (defn outer-tex-block
   "Reads a block of TeX syntax, recursively, and returns a single string"
   []
   (let->> [chunks (many (tex-chunk))]
     ; the root block gets special treatment to avoid the outermost braces
-    (always (apply str chunks))))
+    (always (str/join chunks))))
 
 (defn simple-string
   "Read a simple string literal and convert to TeX syntax"
   []
   (let->> [chars (until-escapable \")]
-    (let [s (apply str chars)
+    (let [s (str/join chars)
           ; unescaped quotes
           raw (str/replace s #"\\\"" "\"")
           ; escaped braces
@@ -70,7 +70,7 @@
   "Consume one or more digits and return a string in TeX syntax (in curly braces)"
   []
   (let->> [chars (many1 (digit))]
-    (always (apply str chars))))
+    (always (str/join chars))))
 
 (defn field-value
   "Read the RHS of a field-value field pair, as a string"
@@ -125,7 +125,7 @@
   ; TODO: create a parsastron helper to map a parser's cok/eok values through the given function and merge this wrapper with gloss-line-characters
   []
   (let->> [characters (gloss-line-characters)]
-    (always (apply str characters))))
+    (always (str/join characters))))
 
 (defn gloss
   "Capture inter-entry content in BibTeX, returning a Gloss record"

@@ -36,15 +36,15 @@
 
 (deftest test-write-str
   (testing "rendering Gloss"
-    (let [actual (-> (->Gloss ["1" "2"]) bibtex/write-str)
+    (let [actual (bibtex/write-str (->Gloss ["1" "2"]))
           expected "1\n2"]
       (is (= expected actual))))
   (testing "rendering Reference"
-    (let [actual (-> (->Reference "book" "benjamin" [(->Field "title" "Reason")]) bibtex/write-str)
+    (let [actual (bibtex/write-str (->Reference "book" "benjamin" [(->Field "title" "Reason")]))
           expected "@book{benjamin,\n  title = {Reason},\n}\n"]
       (is (= expected actual))))
   (testing "rendering Reference without citeky"
-    (let [actual (-> (->Reference "book" nil [(->Field "title" "Apparent")]) bibtex/write-str)
+    (let [actual (bibtex/write-str (->Reference "book" nil [(->Field "title" "Apparent")]))
           expected "@book{\n  title = {Apparent},\n}\n"]
       (is (= expected actual)))))
 
