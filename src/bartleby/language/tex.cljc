@@ -1,7 +1,7 @@
 (ns bartleby.language.tex
   (:refer-clojure :exclude [char read])
   (:require [clojure.string :as str]
-            [the.parsatron :refer :all]
+            [the.parsatron :refer [run defparser let->> >> always attempt char choice either letter many many1 token]]
             [bartleby.language.common :refer [whitespace-chars any-char-except-in curly-braced]]))
 
 (def ^:private accent-commands
@@ -46,8 +46,8 @@
     ; which will just be appended as an empty string by the next tex-block handler
     (always (fancy-character-commands command))))
 
-(def ^:private tex-delimiters #{\# \$ \% \& \\ \_ \{ \} \~ \@ \space})
-(defn escaped-misc
+(def ^:private tex-delimiters #{\# \$ \% \& \_ \{ \} \~ \@ \space})
+(defn escaped-literal
   "Read an escaped TeX character and return the literal string"
   ; TeX's special characters are:
   ;     # $ % & \ ^ _ { } ~
@@ -60,50 +60,94 @@
     (always c)))
 
 (defn macro
-  "Strip (i.e., ignore) formatting that cannot be encoded as Unicode"
-  ; In the following cases, we want to ignore the macro
-  ; and just flatten out the braces as if they were naked blocks
-  ;   \emph{Chronik von Deutschland} => Chronik von Deutschland
-  ;   {\bf NLP}                      => NLP
-  ; it always returns nil, and should come after the fancy-character parser,
-  ; which handles a subset of such commands that can be represented in Unicode
+  "Read a LaTeX macro/command (like \\emph or \\bf) as a Keyword. This
+  should come after the fancy-character parser, which handles a subset of
+  commands that can be represented easily in Unicode."
   []
-  (>> (char \\)
-      (many1 (letter))
-      (many (token whitespace-chars))
-      (always nil)))
+  (let->> [_ (char \\)
+           name (many1 (letter))
+           _ (many (token whitespace-chars))]
+    (always (keyword (str/join name)))))
 
-; node and block are mutually recursive
-(declare node)
-
-; (block) strips the curly braces from a tex-block string and
-; recursively handles the contents inside the tex-block as tex
-; it returns a string with no TeX commands, escapes, or braces.
-(defparser block []
-  (let->> [nodes (curly-braced (many (node)))]
-    (always (str/join nodes))))
-
-(defn node
-  "Return a TeX tree string built by parsing and then generating TeX strings
-  in nested parsers, potentially recursively."
+(defn plain-string
+  "Read a plain string of non-macro, non-group characters"
   []
+  (let->> [chars (many1 (any-char-except-in #{\\ \{ \}}))]
+    (always (str/join chars))))
+
+; Return a TeX tree string built by parsing and then generating TeX strings
+; in nested parsers, potentially recursively.
+(defparser node []
   (choice
     (attempt (accent)) ; returns string
     (attempt (fancy-character)) ; returns string
     (attempt (macro)) ; returns nil
     ; discard escaped hyphens (hyphenation hints)
     (attempt (>> (char \\) (char \-) (always nil))) ; returns nil
-    (attempt (escaped-misc)) ; returns string
+    ; convert \\ to newline
+    (attempt (>> (char \\) (char \\) (always \newline)))
+    (attempt (escaped-literal)) ; returns string
     ; TODO: handle other escaped things?
-    (attempt (block)) ; returns seq of strings
-    (any-char-except-in #{\\ \{ \}}))) ; anything except slashes or braces
+    ; parses a TeX group, starting with an opening curly brace, {,
+    ; recursing as needed, until it hits the matching closing brace, }.
+    ; It's called group because { and } are synonyms for \bgroup and \egroup,
+    ; respectively. Returns a collection.
+    (attempt (curly-braced (many (node))))
+    ; parse a sequence of anything except slashes or braces
+    (plain-string)))
 
 (defn read
   "Parse and simplify the TeX reader into a string of TeX"
   [reader]
-  (str/join (run (many (node)) reader)))
+  (run (many (node)) reader))
 
 (defn read-str
   "Parse and simplify a TeX string into a simplified string of TeX"
   [string]
   (read string))
+
+;;; TEX transformations
+
+(defprotocol Flattenable
+  "Flatten the list of nodes, removing commands and blocks throughout"
+  (-flatten [this] "Flatten this node into a string, or nil"))
+
+(extend-protocol Flattenable
+  clojure.lang.Keyword
+  (-flatten [this] nil)
+  clojure.lang.Sequential
+  (-flatten [this] (str/join (map -flatten this)))
+  Character
+  (-flatten [this] this)
+  String
+  (-flatten [this] this)
+  nil
+  (-flatten [this] nil))
+
+;;; TEX WRITER
+
+(defprotocol TeXFormatter
+  "Handle formatting of a TeX node tree into TeX strings"
+  (-format [this] "Format this as a TeX string"))
+
+(extend-protocol TeXFormatter
+  clojure.lang.Keyword ; for macros
+  (-format [this] (str \\ (name this)))
+  clojure.lang.Sequential
+  (-format [this] (str \{ (str/join (map -format this)) \}))
+  Character
+  (-format [this] this)
+  String
+  (-format [this] this)
+  nil
+  (-format [this] nil))
+
+(defn write-str
+  "Convert TeX tree into TeX-formatted string"
+  [tree & options]
+  (str/join (map -format tree)))
+
+(defn write
+  "Write TeX-formatted output to a java.io.Writer."
+  [tree ^java.io.Writer writer & options]
+  (.write writer ^String (apply write-str tree options)))

@@ -5,7 +5,8 @@
             [bartleby.bibliography :refer [->Field ->Reference ->Gloss]]
             [bartleby.language.common :refer [whitespace-chars whitespace linebreak
                                               maybe any-char-except-in any-char-except
-                                              curly-braced double-quoted before run-seq]])
+                                              curly-braced double-quoted before run-seq]]
+            [bartleby.language.tex :as tex])
   (:import (bartleby.bibliography Field Reference Gloss)))
 
 ;;; BIBTEX READER
@@ -28,34 +29,6 @@
   (let->> [chars (many1 (any-char-except-in delimiter-chars))]
     (always (str/join chars))))
 
-; tex-chunk and tex-block are mutually recursive
-(declare tex-block)
-
-; doesn't work in naked defn form, even when simplified, due to mutual recursion;
-; one of them (tex-block or tex-chunk) has to be lazy!
-(defparser tex-chunk []
-  ; accept any number of things that are not (unescaped) close curly braces
-  ; returns a chunk of tex, which is either a string or a single character
-  (choice
-    (attempt (string "\\{"))
-    (attempt (string "\\}")) ; matches same thing as (string [\\ \}]) but has different result
-    (any-char-except-in #{\{ \}})
-    (curly-braced (tex-block))))
-
-(defn tex-block
-  "Reads a block of TeX syntax, recursively, and returns a single string
-  enclosed in curly braces"
-  []
-  (let->> [chunks (many (tex-chunk))]
-    (always (str \{ (str/join chunks) \}))))
-
-(defn outer-tex-block
-  "Reads a block of TeX syntax, recursively, and returns a single string"
-  []
-  (let->> [chunks (many (tex-chunk))]
-    ; the root block gets special treatment to avoid the outermost braces
-    (always (str/join chunks))))
-
 (defn simple-string
   "Read a simple string literal and convert to TeX syntax"
   []
@@ -77,7 +50,7 @@
   "Read the RHS of a field-value field pair, as a string"
   []
   ; should this handle whitespace, or should the field parser (as is currently the case)?
-  (choice (curly-braced (outer-tex-block))
+  (choice (curly-braced (many (tex/node)))
           (double-quoted (simple-string))
           ; TODO: handle string variable references
           (number-literal)))
@@ -177,7 +150,7 @@
 (extend-protocol BibTeXFormatter
   Field
   (-format [{:keys [key value]}]
-    (str *indentation* key (when *=-padded?* \space) \= (when *=-padded?* \space) \{ value \}))
+    (str *indentation* key (when *=-padded?* \space) \= (when *=-padded?* \space) (tex/-format value)))
   Reference
   (-format [{:keys [pubtype citekey fields]}]
     ; omit citekey (and the comma after) if citekey is nil

@@ -12,7 +12,7 @@
 
 (defn- normalize-value
   [value]
-  (some-> value tex/read-str core/normalize-nfc core/collapse-space))
+  (some-> value core/normalize-nfc core/collapse-space))
 
 (defn- normalize-json
   [obj]
@@ -41,11 +41,11 @@
           expected "1\n2"]
       (is (= expected actual))))
   (testing "rendering Reference"
-    (let [actual (bibtex/write-str (->Reference "book" "benjamin" [(->Field "title" "Reason")]))
+    (let [actual (bibtex/write-str (->Reference "book" "benjamin" [(->Field "title" ["Reason"])]))
           expected "@book{benjamin,\n  title = {Reason},\n}\n"]
       (is (= expected actual))))
   (testing "rendering Reference without citeky"
-    (let [actual (bibtex/write-str (->Reference "book" nil [(->Field "title" "Apparent")]))
+    (let [actual (bibtex/write-str (->Reference "book" nil [(->Field "title" ["Apparent"])]))
           expected "@book{\n  title = {Apparent},\n}\n"]
       (is (= expected actual)))))
 
@@ -63,12 +63,12 @@
   (testing "hard-casing block"
     (let [input "{{MALLET}: A Machine Learning for Language Toolkit}"
           actual (run (bibtex/field-value) input)
-          expected "{MALLET}: A Machine Learning for Language Toolkit"]
+          expected [["MALLET"] ": A Machine Learning for Language Toolkit"]]
       (is (= expected actual))))
   (testing "command blocks"
     (let [input "{Putting the \\textbf{Par} back in \\emph{\\textbf{Par}}sing}"
           actual (run (bibtex/field-value) input)
-          expected "Putting the \\textbf{Par} back in \\emph{\\textbf{Par}}sing"]
+          expected ["Putting the " :textbf ["Par"] " back in " :emph [:textbf ["Par"]] "sing"]]
       (is (= expected actual)))))
 
 (deftest test-failure

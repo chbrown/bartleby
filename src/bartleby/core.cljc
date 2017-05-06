@@ -102,8 +102,8 @@
   with :match, :output, and :priority keys."
   [r]
   (let [{:keys [citekey fields]} r
-        author (some->> fields (filter #(= (:key %) "author")) first :value author->lastnames format-names)
-        year (->> fields (filter #(= (:key %) "year")) first :value)]
+        author (some->> fields (filter #(= (:key %) "author")) first :value tex/-flatten author->lastnames format-names)
+        year (->> fields (filter #(= (:key %) "year")) first :value tex/-flatten)]
     (when (and author year)
       ; priority is so that greedier replacements happen first
       ; too ambiguous:

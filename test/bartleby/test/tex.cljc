@@ -3,7 +3,7 @@
             [bartleby.language.tex :as tex]
             [bartleby.core :as core]))
 
-(def ^:private ->tex->str (comp core/normalize-nfc tex/read-str))
+(def ^:private ->tex->str (comp core/normalize-nfc tex/-flatten tex/read-str))
 
 (deftest test-read-str
   (testing "rendering accents"
