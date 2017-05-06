@@ -3,28 +3,18 @@
             [bartleby.language.tex :as tex]
             [bartleby.core :as core]))
 
+(def ^:private ->tex->str (comp core/normalize-nfc tex/read-str))
+
 (deftest test-read-str
   (testing "rendering accents"
-    (let [actual (-> "\\.a \\'e \\^{i} \\~o \\\"u" tex/read-str core/normalize-nfc)
-          expected "ȧ é î õ ü"]
-      (is (= expected actual))))
+    (is (= "ȧ é î õ ü" (->tex->str "\\.a \\'e \\^{i} \\~o \\\"u"))))
   (testing "rendering fancy characters"
-    (let [actual (tex/read-str "\\o \\j")
-          expected "ø ȷ"]
-      (is (= expected actual))))
+    (is (= "ø ȷ" (->tex->str "\\o \\j"))))
   (testing "absorbing macros"
-    (let [actual (tex/read-str "\\emph{\\textbf{bold+italic}}")
-          expected "bold+italic"]
-      (is (= expected actual))))
+    (is (= "bold+italic" (->tex->str "\\emph{\\textbf{bold+italic}}"))))
   (testing "absorbing hyphenation hints"
-    (let [actual (tex/read-str "luxur\\-ious\\-ly")
-          expected "luxuriously"]
-      (is (= expected actual))))
+    (is (= "luxuriously" (->tex->str "luxur\\-ious\\-ly"))))
   (testing "unescaping characters"
-    (let [actual (tex/read-str "\\# \\~")
-          expected "# ~"]
-      (is (= expected actual))))
+    (is (= "# ~" (->tex->str "\\# \\~"))))
   (testing "merging vacuous blocks"
-    (let [actual (tex/read-str "A{B{C}}")
-          expected "ABC"]
-      (is (= expected actual)))))
+    (is (= "ABC" (->tex->str "A{B{C}}")))))
