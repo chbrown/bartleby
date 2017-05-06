@@ -2,22 +2,6 @@
   (:require [clojure.test :refer :all]
             [bartleby.bibliography :as bibliography :refer [->Field ->Reference ->Gloss]]))
 
-(deftest test-toJSON
-  (testing "JSONifying Gloss"
-    (is (= {"lines" ["1" "2"]}
-           (bibliography/toJSON (->Gloss ["1" "2"])))))
-  (testing "JSONifying Reference"
-    (is (= {"pubtype" "book", "citekey" "benjamin", "title" "Reason"}
-           (bibliography/toJSON (->Reference "book" "benjamin" [(->Field "title" "Reason")]))))))
-
-(deftest test-fromJSON
-  (testing "parsing Gloss"
-    (is (= (->Gloss ["1" "2"])
-           (bibliography/fromJSON {"lines" ["1" "2"]}))))
-  (testing "parsing Reference"
-    (is (= (->Reference "book" "benjamin" [(->Field "title" "Reason")])
-           (bibliography/fromJSON {"pubtype" "book", "citekey" "benjamin", "title" "Reason"})))))
-
 (deftest test-expand-citekeys
   (let [items [(->Reference "incollection" "zara" [(->Field "title" "Unrelated")])
                (->Reference "incollection" "adams" [(->Field "crossref" "benjamin")])

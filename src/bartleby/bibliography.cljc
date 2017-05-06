@@ -1,44 +1,16 @@
 (ns bartleby.bibliography
   (:require [clojure.string :as str]))
 
-(defprotocol ToJSON
-  "Complex data structures to be transformed before serializing as JSON should
-  implement this protocol to facilitate cross-platform use.
-  Then, in platform-dependent code, this protocol can be extended to implement
-  that platform's JSON serialization protocol (e.g., JSONWriter)."
-  (toJSON [this] "Convert this into a (flat) JSON-friendly structure"))
+(defrecord Field [key value])
 
-(defrecord Field [key value]
-  ToJSON
-  (toJSON [this]
-    {key value}))
-
-(defrecord Reference [pubtype citekey fields]
-  ToJSON
-  (toJSON [this]
-    (into {"pubtype" pubtype, "citekey" citekey} (map toJSON fields))))
+(defrecord Reference [pubtype citekey fields])
 
 (defn Reference?
   "Return true if r is an instance of the Reference class"
   [r]
   (instance? Reference r))
 
-(defrecord Gloss [lines]
-  ToJSON
-  (toJSON [this]
-    {"lines" lines}))
-
-(defn fromJSON
-  "Convert object into an instance of either Reference or Gloss,
-  depending on whether they key \"pubtype\" is present in object"
-  [object]
-  (if (contains? object "pubtype")
-    (let [pubtype (get object "pubtype")
-          citekey (get object "citekey")
-          fields-map (dissoc object "pubtype" "citekey")
-          fields (map (fn [[key value]] (Field. key value)) fields-map)]
-      (Reference. pubtype citekey fields))
-    (Gloss. (get object "lines"))))
+(defrecord Gloss [lines])
 
 (defn expand-citekeys
   "Recurse into crossref fields to find all used citekeys"

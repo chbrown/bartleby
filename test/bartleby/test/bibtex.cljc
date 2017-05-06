@@ -6,6 +6,7 @@
             [the.parsatron :refer [run]]
             [bartleby.language.tex :as tex]
             [bartleby.language.bibtex :as bibtex]
+            [bartleby.language.json :refer [toJSON]]
             [bartleby.bibliography :as bibliography :refer [->Field ->Reference ->Gloss]]
             [bartleby.core :as core]))
 
@@ -29,7 +30,7 @@
     (testing (str "parsing " bibfile " into json equivalent")
       (let [jsonfile (str/replace bibfile ".bib" ".json")
             ; is io/resource utf-8 by default?
-            actual (-> bibfile io/resource slurp bibtex/read-str bibliography/toJSON normalize-json)
+            actual (-> bibfile io/resource slurp bibtex/read-str toJSON normalize-json)
             expected (-> jsonfile io/resource slurp json/read-str)]
         ; clojure.test doesn't care about order but (= expected actual) is how humane-test-output reads it
         (is (= expected actual))))))
