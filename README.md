@@ -74,7 +74,7 @@ I've also compiled my own [guide / reference / notes](Parsatron.md) for the `par
 
 Run the following to exclude dev/test from [cloverage](https://github.com/cloverage/cloverage)'s report:
 
-    lein cloverage --ns-exclude-regex user --ns-exclude-regex bartleby.test.*
+    lein cloverage --ns-exclude-regex user
 
 
 ## Release instructions
