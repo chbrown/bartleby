@@ -62,13 +62,13 @@
 (deftest test-field-value-parser
   (testing "hard-casing block"
     (let [input "{{MALLET}: A Machine Learning for Language Toolkit}"
-          actual (run (bibtex/field-value) input)
-          expected [["MALLET"] ": A Machine Learning for Language Toolkit"]]
+          actual (tex/write-str (run (bibtex/field-value) input))
+          expected "{MALLET}: A Machine Learning for Language Toolkit"]
       (is (= expected actual))))
   (testing "command blocks"
     (let [input "{Putting the \\textbf{Par} back in \\emph{\\textbf{Par}}sing}"
-          actual (run (bibtex/field-value) input)
-          expected ["Putting the " :textbf ["Par"] " back in " :emph [:textbf ["Par"]] "sing"]]
+          actual (tex/write-str (run (bibtex/field-value) input))
+          expected "Putting the \\textbf{Par} back in \\emph{\\textbf{Par}}sing"]
       (is (= expected actual)))))
 
 (deftest test-failure
