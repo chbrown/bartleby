@@ -1,7 +1,7 @@
 (ns bartleby.cli
   (:require [clojure.string :as str]
             [clojure.java.io :as io]
-            [clojure.data.json :as json :refer [JSONWriter]]
+            [clojure.data.json :as json]
             [clojure.data.xml :as xml]
             [bartleby.core :as core]
             [bartleby.language.bibtex :as bibtex]
@@ -9,13 +9,7 @@
             [bartleby.language.json :refer [toJSON fromJSON]]
             [bartleby.bibliography :as bibliography]
             [clojure.tools.cli :refer [parse-opts]])
-  (:import (bartleby.language.json ToJSON))
   (:gen-class))
-
-(extend-type ToJSON
-  JSONWriter
-  (-write [this out]
-    (json/write (toJSON this) out)))
 
 (defn- resource->Properties
   "Load the given resource as a Properties instance"
@@ -84,6 +78,7 @@
   (->> inputs
        (mapcat input->items)
        (transform-items options)
+       (map toJSON)
        (map json/write-str)))
 
 (defn json2bib-command
