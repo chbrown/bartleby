@@ -18,7 +18,8 @@
   :profiles {:uberjar {:aot :all}
              :dev {:source-paths ["dev" "test"]
                    :resource-paths ["test/resources"]
-                   :dependencies [[org.clojure/tools.namespace "0.3.0-alpha3"]]
+                   :dependencies [[org.clojure/tools.namespace "0.3.0-alpha3"]
+                                  [org.clojure/tools.trace "0.7.9"]]
                    :repl-options {:init-ns user}}
              :test {:source-paths ["test"]
                     :resource-paths ["test/resources"]}})
