@@ -2,7 +2,16 @@
   (:refer-clojure :exclude [char])
   (:require [the.parsatron :as parsatron :refer [let->> >> always attempt between char either many token]]))
 
-(def whitespace-chars #{\space \return \newline \tab \formfeed})
+(def whitespace-chars
+  "Set of the characters:
+  Horizontal Tab (U+0009)
+  Line Feed (U+000A)
+  Vertical Tab (U+000B)
+  Form Feed (U+000C)
+  Carriage Return (U+000D)
+  Space (U+0020)"
+  #{\tab \newline \u000B \formfeed \return \space})
+
 (def whitespace (many (token whitespace-chars)))
 
 (def linebreak (either (>> (char \return) (attempt (char \newline)))
