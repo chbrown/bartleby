@@ -13,7 +13,7 @@
 (extend-protocol ToJSON
   Field
   (toJSON [{:keys [key value]}]
-    {key (tex/-flatten value)})
+    {key (-> value tex/simplify tex/write-str)})
   Reference
   (toJSON [{:keys [pubtype citekey fields]}]
     (into {"pubtype" pubtype, "citekey" citekey} (map toJSON fields)))

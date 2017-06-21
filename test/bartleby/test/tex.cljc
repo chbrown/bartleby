@@ -1,20 +1,18 @@
 (ns bartleby.test.tex
   (:require [clojure.test :refer :all]
             [bartleby.language.tex :as tex]
-            [bartleby.core :as core]))
-
-(def ^:private ->tex->str (comp core/normalize-nfc tex/-flatten tex/read-str))
+            [bartleby.core :refer [tex->tex]]))
 
 (deftest test-read-str
   (testing "rendering accents"
-    (is (= "ȧ é î õ ü" (->tex->str "\\.a \\'e \\^{i} \\~o \\\"u"))))
+    (is (= "ȧ é î õ ü" (tex->tex "\\.a \\'e \\^{i} \\~o \\\"u"))))
   (testing "rendering fancy characters"
-    (is (= "øȷ" (->tex->str "\\o \\j"))))
+    (is (= "øȷ" (tex->tex "\\o \\j"))))
   (testing "absorbing macros"
-    (is (= "bold+italic" (->tex->str "\\emph{\\textbf{bold+italic}}"))))
+    (is (= "bold+italic" (tex->tex "\\emph{\\textbf{bold+italic}}"))))
   (testing "absorbing hyphenation hints"
-    (is (= "luxuriously" (->tex->str "luxur\\-ious\\-ly"))))
+    (is (= "luxuriously" (tex->tex "luxur\\-ious\\-ly"))))
   (testing "unescaping characters"
-    (is (= "# ̃" (->tex->str "\\# \\~"))))
+    (is (= "# ̃" (tex->tex "\\# \\~"))))
   (testing "merging vacuous blocks"
-    (is (= "ABC" (->tex->str "A{B{C}}")))))
+    (is (= "ABC" (tex->tex "A{B{C}}")))))

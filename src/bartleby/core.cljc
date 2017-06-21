@@ -15,6 +15,15 @@
   #?(:clj (java.text.Normalizer/normalize s java.text.Normalizer$Form/NFC)
      :cljs (.normalize s "NFC")))
 
+(defn tex->tex
+  "Parse TeX string, simplify, write TeX string, and normalize to Unicode NFC."
+  [s]
+  (-> s
+      tex/read-str
+      tex/simplify
+      tex/write-str
+      normalize-nfc))
+
 (defn collapse-space
   "Replace all sequences of whitespace in s with a single space"
   [s]
@@ -102,8 +111,8 @@
   with :match, :output, and :priority keys."
   [r]
   (let [{:keys [citekey fields]} r
-        author (some->> fields (filter #(= (:key %) "author")) first :value tex/-flatten author->lastnames format-names)
-        year (->> fields (filter #(= (:key %) "year")) first :value tex/-flatten)]
+        author (some->> fields (filter #(= (:key %) "author")) first :value tex/simplify tex/write-str author->lastnames format-names)
+        year (->> fields (filter #(= (:key %) "year")) first :value tex/simplify tex/write-str)]
     (when (and author year)
       ; priority is so that greedier replacements happen first
       ; too ambiguous:

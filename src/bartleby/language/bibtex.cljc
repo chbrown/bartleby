@@ -50,7 +50,7 @@
   "Read the RHS of a field-value field pair, as a string"
   []
   ; should this handle whitespace, or should the field parser (as is currently the case)?
-  (choice (curly-braced (many (tex/node)))
+  (choice (curly-braced (many (tex/tex-token)))
           (double-quoted (simple-string))
           ; TODO: handle string variable references
           (number-literal)))
