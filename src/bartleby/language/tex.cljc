@@ -99,6 +99,13 @@
     (right-while (zip/right loc) pred)
     loc))
 
+(defn- remove-while
+  "Remove loc if (pred loc), move to the next loc, and repeat"
+  [loc pred]
+  (if (pred loc)
+    (recur (-> loc zip/remove zip/next) pred)
+    loc))
+
 (defn- zip-walk
   "Run `f` on each loc in `tree` (a seq), allowing `f` to modify the loc as
   much as wanted / needed."
@@ -219,6 +226,20 @@
           loc))
       (zip-walk tree)))
 
+; collapse-space
+
+(defn collapse-space
+  "Collapse all sequences of contiguous space into a single space.
+  Group boundaries break contiguity.
+  This is a transformation instead of part of the parser since we may want to
+  output a tree that is relatively faithful to the input."
+  [tree]
+  (-> (fn [loc]
+        (if (loc-blank? loc)
+          (-> loc zip/next (remove-while loc-blank?))
+          loc))
+      (zip-walk tree)))
+
 ; flatten
 
 (defn flatten
@@ -243,7 +264,7 @@
 (defn simplify
   "Replace fancy characters, then unescape accents, then flatten"
   [tree]
-  (-> tree interpret-character-commands interpret-accent-commands flatten))
+  (-> tree interpret-character-commands interpret-accent-commands flatten collapse-space))
 
 ;;; TEX WRITER
 
