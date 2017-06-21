@@ -52,3 +52,64 @@
         (lazy-loc-seq)
         (map debug-loc)
         (print-table ks))))
+
+(defn debug-bibtex
+  [input]
+  (println)
+  (println "Input " input)
+  (let [item (bibtex/read-str input)]
+    (println "Object" (pr-str item))
+    (let [output (bibtex/write-str item)]
+      (println "Output" output)
+      item)))
+
+(defn debug-tex
+  "Parse input as TeX, printing the raw input, the input tree representation,
+  and the output representation of that tree"
+  [input]
+  (println "🔣  Input " input)
+  (let [tree (tex/read-str input)]
+    (println "🌲  Tree  " (pr-str tree))
+    (let [output (tex/write-str tree)]
+      (println "🐣  Output" output)
+      tree)))
+
+(defn debug-tex-transformations
+  "Parse `input` as TeX, printing the raw input string, the parsed tree
+  representation, and generate a TeX string of that (mostly untransformed) tree.
+  Then transform the input tree with `f`, print the transformed tree structure,
+  and finally generate the TeX string of that transformed tree.
+  Returns the transformed tree."
+  [input & fs]
+  (println "🔣  Input " input)
+  (let [tree (tex/read-str input)]
+    (println "🌲  Tree  " (pr-str tree))
+    (println "🐣  Middle" (tex/write-str tree))
+    (let [transformed-tree (reduce (fn [prev-tree f]
+                                     (println "ƒ " (:name (meta f)))
+                                     (let [next-tree (f prev-tree)]
+                                       (println "🎄  Tree  " (pr-str next-tree))
+                                       next-tree)) tree fs)
+          output (tex/write-str transformed-tree)]
+      (println "💥  Output" output)
+      transformed-tree)))
+
+(comment
+  (println (read-resource "examples/multi/paper.bib"))
+
+  (debug-bibtex "@book{benjamin,  title = {Reason \\emph{and} F\\`ate},}")
+
+  (trace/trace-ns 'clojure.zip)
+
+  (print-zip-table (debug-tex "\\'{}a"))
+
+  (-> '(:emph (:textbf (\b \o \l \d \+ \i \t \a \l \i \c)))
+      zip/seq-zip
+      zip/next
+      zip/node)
+
+  (-> "\\'" (debug-tex-transformations #'tex/interpret-character-commands
+                                       #'tex/interpret-accent-commands
+                                       #'tex/flatten))
+
+  nil)
