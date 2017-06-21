@@ -1,6 +1,7 @@
 (ns bartleby.language.jats
   (:require [clojure.string :as str]
             [bartleby.core :refer [split-fullname wrap xml-name]]
+            [bartleby.language.tex :as tex]
             [clojure.data.xml :refer [element xml-comment emit emit-str]]
             [clojure.data.xml.protocols :refer [AsElements as-elements]])
   (:import (java.io Writer)
@@ -66,9 +67,11 @@
 (extend-protocol AsElements
   Field
   (as-elements [{:keys [key value]}]
-    (list (if-let [value-element (get field-mapping (keyword (str/lower-case key)))]
-            (value-element value)
-            (create-comment (str key " = " value)))))
+    (let [key-keyword (keyword (str/lower-case key))
+          value-string (-> value tex/simplify tex/write-str)]
+      (list (if-let [value-element (get field-mapping key-keyword)]
+              (value-element value-string)
+              (create-comment (str key " = " value-string))))))
   Reference
   (as-elements [{:keys [pubtype citekey fields]}]
     (list (element :ref {:id (xml-name citekey)}
