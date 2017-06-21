@@ -227,7 +227,7 @@
 
 (defn -main
   [& argv]
-  (let [{:keys [options arguments errors summary] :as opts} (parse-opts argv cli-options)
+  (let [{:keys [options arguments summary errors] :as opts} (parse-opts argv cli-options)
         [command & args] arguments
         command-fn (get commands command)]
     (cond
