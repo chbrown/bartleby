@@ -5,10 +5,13 @@
 
 (deftest test-tex->tex
   (testing "rendering accents as combining characters"
-    (is (= "ȧ é î õ ü" (tex->tex "\\.a \\'e \\^{i} \\~o \\\"u"))))
+    (is (= "ȧ é î õ ü" (tex->tex "\\.a \\'e \\^{i} \\~o \\\"u")))
+    (is (= "ȧ é î õ ü" (tex->tex "\\. a \\' {e} \\^{ i} \\~{ o} \\\" { u}"))))
 
   (testing "rendering fancy characters"
-    (is (= "øȷ" (tex->tex "\\o \\j"))))
+    (is (= "øȷ" (tex->tex "\\o \\j")))
+    (is (= "$ øk ȷ" (tex->tex "\\$ \\o k \\j")))
+    (is (= "$økȷ" (tex->tex "\\$\\o{}k\\j"))))
 
   (testing "absorbing macros"
     (is (= "bold+italic" (tex->tex "\\emph{\\textbf{bold+italic}}"))))
