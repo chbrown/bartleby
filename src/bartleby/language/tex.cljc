@@ -90,14 +90,6 @@
     (when-not (zip/end? loc)
       (blank? (zip/node loc)))))
 
-(defn- next-while
-  "Advance over nodes until (pred loc) returns false; returns the first loc for
-  which pred returns false, so may return the given loc."
-  [loc pred]
-  (if (pred loc)
-    (next-while (zip/next loc) pred)
-    loc))
-
 (defn- right-while
   "Go right over nodes until (pred loc) returns false; returns the first loc for
   which pred returns false, so may return the given loc. Returns nil if there are
