@@ -174,7 +174,7 @@
     :default nil
     :parse-fn #(NamedReader. % (io/reader %))
     :assoc-fn (fn [m k v] (update m k conj v))]
-   [nil "--extract-subtitles" "Extract (book)title subtitles into sub(book)title field"
+   [nil "--extract-subtitles" "Extract (book)title subtitles into a new (book)subtitle field"
     :id :extract-subtitles
     :default false]
    ["-h" "--help"]

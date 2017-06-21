@@ -84,7 +84,7 @@
 
 (defn extract-subtitles
   "If item is an instance of Reference, and there is a colon in a (book)title
-  field and no existing sub(book)title, remove the subtitle from the field's
+  field and no existing (book)subtitle, remove the subtitle from the field's
   value and insert a new field with that value; otherwise, return item unchanged."
   [item]
   (cond-> item
