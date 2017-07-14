@@ -47,7 +47,7 @@
 
 (defn- transform-items
   [options items]
-  (let [{:keys [select-files remove-fields extract-subtitles]} options
+  (let [{:keys [select-files remove-fields extract-subtitles embed-subtitles]} options
         ; find the citekeys from a list of .tex / .aux files
         select-citekeys (->> select-files
                              (mapcat input->citekeys)
@@ -62,7 +62,8 @@
       ; remove blacklisted fields from each reference
       (seq remove-fields) (map #(apply bibliography/remove-fields % remove-fields))
       ; extract subtitles
-      extract-subtitles (map bibliography/extract-subtitles))))
+      extract-subtitles (map bibliography/extract-subtitles)
+      embed-subtitles (map bibliography/embed-subtitles))))
 
 (defn cat-command
   "Parse the input BibTeX file(s) and reformat as a stream of BibTeX, with minimal changes"
@@ -116,10 +117,10 @@
 
 (defn jats-command
   "Parse BibTeX and output each component as JATS XML"
-  [inputs & options]
+  [inputs & {:as options}]
   (->> inputs
        (mapcat input->items)
-       (transform-items options)
+       (transform-items (assoc options :embed-subtitles true))
        (jats/write-str)
        (list)))
 
@@ -176,6 +177,9 @@
     :assoc-fn (fn [m k v] (update m k conj v))]
    [nil "--extract-subtitles" "Extract (book)title subtitles into a new (book)subtitle field"
     :id :extract-subtitles
+    :default false]
+   [nil "--embed-subtitles" "Embed (book)subtitle values back into the corresponding (book)title field"
+    :id :embed-subtitles
     :default false]
    ["-h" "--help"]
    ["-v" "--version"]])

@@ -89,3 +89,37 @@
   [item]
   (cond-> item
     (Reference? item) (update :fields fields-extract-subtitles)))
+
+(defn combine-fields
+  "Return a single field that is the concatenation of field's and subfield's
+  values, separated by a colon, updating field if possible, or inferring the key
+  if only subfield is supplied."
+  [field subfield]
+  (let [{subkey :key, subvalue :value} subfield]
+    (if field
+      (update field :value str ": " subvalue)
+      ; weird to have a subtitle but no title, but we'll do our best
+      (Field. (str/replace subkey #"(?i)sub" "") subvalue))))
+
+(defn- fields-embed-subtitles
+  "For any field matching /.*subtitle/, replace it and its companion with a single field"
+  [fields]
+  (let [subfields (filter #(re-matches #"(?i).*subtitle" (:key %)) fields)]
+    (reduce (fn [fields subfield]
+              (let [{subkey :key, subvalue :value} subfield
+                    ; find companion field(s)
+                    companionkey-lower (str/lower-case (str/replace subkey #"(?i)sub" ""))
+                    companions (filter #(= (str/lower-case (:key %)) companionkey-lower) fields)
+                    ; use the first companion field found
+                    {:keys [key value] :as field} (first companions)]
+                ; add combined field to the other fields
+                (cons (combine-fields field subfield)
+                      (remove #(contains? #{key subkey} (:key %)) fields)))) fields subfields)))
+
+(defn embed-subtitles
+  "If item is an instance of Reference, and there are any sub(book)title
+  fields, remove the subtitle field and  from the field's
+  value and insert a new field with that value; otherwise, return item unchanged."
+  [item]
+  (cond-> item
+    (Reference? item) (update :fields fields-embed-subtitles)))
