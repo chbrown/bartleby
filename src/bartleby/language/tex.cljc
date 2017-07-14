@@ -4,8 +4,10 @@
             [clojure.walk :as walk]
             [clojure.zip :as zip]
             [the.parsatron :refer [run defparser let->> >> always attempt bind between choice either many many1
-                                   token any-char char letter letter?]]
-            [bartleby.language.common :refer [whitespace whitespace-chars any-char-except]]))
+                                   token any-char char letter letter?]]))
+
+(defn- any-char-except [x]
+  (token #(and (char? %) (not= % x))))
 
 (defn- not-letter
   "Consume a non-letter [^a-zA-Z] character."
@@ -16,6 +18,18 @@
   "Run the parser `p` and run the result through `f`"
   [f p]
   (bind p #(always (f %))))
+
+(def whitespace-chars
+  "Set of the characters:
+  Horizontal Tab (U+0009)
+  Line Feed (U+000A)
+  Vertical Tab (U+000B)
+  Form Feed (U+000C)
+  Carriage Return (U+000D)
+  Space (U+0020)"
+  #{\tab \newline \u000B \formfeed \return \space})
+
+(def whitespace (many (token whitespace-chars)))
 
 (defn control-symbol
   "Parse a TeX 'control symbol', i.e., the escape character + another non-letter character.
