@@ -11,7 +11,6 @@
             [bartleby.cli :as cli]
             [bartleby.core :as core]
             [bartleby.language.bibtex :as bibtex]
-            [bartleby.language.common :as common]
             [bartleby.language.tex :as tex]
             [bartleby.language.json :refer [toJSON fromJSON]]
             [bartleby.bibliography :refer [->Field ->Reference ->Gloss]]
