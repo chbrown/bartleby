@@ -1,5 +1,6 @@
 (ns bartleby.bibliography
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [bartleby.language.tex :as tex]))
 
 (defrecord Field [key value])
 
@@ -97,7 +98,7 @@
   [field subfield]
   (let [{subkey :key, subvalue :value} subfield]
     (if field
-      (update field :value str ": " subvalue)
+      (update field :value tex/-concat ": " subvalue)
       ; weird to have a subtitle but no title, but we'll do our best
       (Field. (str/replace subkey #"(?i)sub" "") subvalue))))
 

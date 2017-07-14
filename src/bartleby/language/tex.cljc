@@ -283,20 +283,26 @@
 ;;; TEX WRITER
 
 (defprotocol TeXFormatter
-  "Handle formatting of a TeX node tree into TeX strings"
-  (-format [this] "Format this as a TeX string"))
+  "Handle operations on TeX nodes"
+  (-format [this] "Format this as a TeX string")
+  (-concat [this & xs] "Concatenate this with other TeX nodes"))
 
 (extend-protocol TeXFormatter
   clojure.lang.Keyword ; for macros
   (-format [this] (str \\ (name this)))
+  (-concat [this & xs] (list* this xs))
   clojure.lang.Sequential
   (-format [this] (str \{ (str/join (map -format this)) \}))
+  (-concat [this & xs] (concat this xs))
   Character
   (-format [this] this)
+  (-concat [this & xs] (list* this xs))
   String
   (-format [this] this)
+  (-concat [this & xs] (concat this xs))
   nil
-  (-format [this] nil))
+  (-format [this] nil)
+  (-concat [this & xs] (xs)))
 
 (defn write-str
   "Convert TeX tree into TeX-formatted string"
