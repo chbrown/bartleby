@@ -127,12 +127,12 @@
 ; each command should take (inputs & options) and return a seq of lines
 ; the #' reader macro enables access to the function's metadata later
 ; but doesn't prevent us from calling the function directly as usual
-(def commands {"cat" #'cat-command
-               "json" #'json-command
-               "json2bib" #'json2bib-command
-               "test" #'test-command
+(def commands {"cat"         #'cat-command
+               "json"        #'json-command
+               "json2bib"    #'json2bib-command
+               "test"        #'test-command
                "interpolate" #'interpolate-command
-               "jats" #'jats-command})
+               "jats"        #'jats-command})
 
 (defn- summarize-commands
   [commands]
