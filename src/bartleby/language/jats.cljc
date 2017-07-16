@@ -1,6 +1,6 @@
 (ns bartleby.language.jats
   (:require [clojure.string :as str]
-            [bartleby.core :refer [split-fullname]]
+            [bartleby.util :refer [split-fullname]]
             [bartleby.language.tex :as tex]
             [clojure.data.xml :refer [element xml-comment emit emit-str]]
             [clojure.data.xml.protocols :refer [AsElements as-elements]])

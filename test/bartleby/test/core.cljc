@@ -2,7 +2,8 @@
   (:require [clojure.test :refer :all]
             [clojure.java.io :as io]
             [bartleby.bibliography :refer [->Field ->Reference]]
-            [bartleby.core :as core]))
+            [bartleby.core :as core]
+            [bartleby.util :as util]))
 
 (deftest test-citekeys
   (testing "extraction from tex"
@@ -15,13 +16,13 @@
       (is (= expected actual)))))
 
 (deftest test-split-fullname
-  (is (= ["Andrea" "Littlemore"] (core/split-fullname "Andrea Littlemore")))
-  (is (= ["Carrie E." "Donut"] (core/split-fullname "Carrie E. Donut")))
-  (is (= ["Benjamin" "Adams"] (core/split-fullname "Adams, Benjamin")))
-  (is (= ["Benjamin Haar" "Adams"] (core/split-fullname "Adams, Benjamin Haar")))
-  (is (= ["Lucky" "von Duck"] (core/split-fullname "von Duck, Lucky")))
+  (is (= ["Andrea" "Littlemore"] (util/split-fullname "Andrea Littlemore")))
+  (is (= ["Carrie E." "Donut"] (util/split-fullname "Carrie E. Donut")))
+  (is (= ["Benjamin" "Adams"] (util/split-fullname "Adams, Benjamin")))
+  (is (= ["Benjamin Haar" "Adams"] (util/split-fullname "Adams, Benjamin Haar")))
+  (is (= ["Lucky" "von Duck"] (util/split-fullname "von Duck, Lucky")))
   ; TODO: add test for inferring patronyms from fullnames without commas
-  (is (= ["Madonna"] (core/split-fullname "Madonna"))))
+  (is (= ["Madonna"] (util/split-fullname "Madonna"))))
 
 (deftest test-interpolate
   (let [references [(->Reference "book" "littlemore" [(->Field "author" ["Andrea Littlemore"])

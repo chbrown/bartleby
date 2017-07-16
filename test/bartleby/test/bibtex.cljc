@@ -8,15 +8,16 @@
             [bartleby.language.bibtex :as bibtex]
             [bartleby.language.json :refer [toJSON]]
             [bartleby.bibliography :as bibliography :refer [->Field ->Reference ->Gloss]]
-            [bartleby.core :as core]))
+            [bartleby.core :as core]
+            [bartleby.util :as util]))
 
 (defn- normalize-value
   [value]
-  (some-> value core/normalize-nfc core/collapse-space))
+  (some-> value util/normalize-nfc util/collapse-space))
 
 (defn- normalize-json
   [obj]
-  (core/map-values normalize-value obj))
+  (util/map-values normalize-value obj))
 
 (def pairs-bibfiles (->> (io/resource "resources/pairs")
                          (io/file)
