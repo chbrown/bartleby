@@ -81,6 +81,8 @@
     (attempt (>> (string "'")   (always :textquoteright)))
     (attempt (>> (string "!`")  (always :textexclamdown)))
     (attempt (>> (string "?`")  (always :textquestiondown)))
+    ; not technically a ligature:
+    (attempt (>> (char \~) (always \u00A0))) ; NO-BREAK SPACE (U+00A0)
     ; TODO: handle other escaped things?
     ; parse anything (and everything) else as a raw character, except for },
     ; which we have to fail on so that groups can parse it
