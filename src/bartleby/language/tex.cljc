@@ -353,7 +353,7 @@
   (-concat [this & xs] (list* this xs))
   String
   (-format [this] this)
-  (-concat [this & xs] (concat this xs))
+  (-concat [this & xs] (apply str this xs))
   nil
   (-format [this] nil)
   (-concat [this & xs] (xs)))
