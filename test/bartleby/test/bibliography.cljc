@@ -60,3 +60,25 @@
     (let [reference (->Reference "book" "benjamin" [(->Field "title" "A: B")])]
       (is (= (->Reference "book" "benjamin" [(->Field "title" "A") (->Field "subtitle" "B")])
              (bibliography/extract-subtitles reference))))))
+
+(deftest test-fields-embed-subtitles
+  (testing "embedding subtitles of split fields"
+    (let [fields [(->Field "title" "All of Everything")
+                  (->Field "subtitle" "More or Less")]]
+      (is (= [(->Field "title" "All of Everything: More or Less")]
+             (#'bibliography/fields-embed-subtitles fields)))))
+  (testing "embedding subtitles of unsplit field"
+    (let [fields [(->Field "title" "All of Everything: More or Less")]]
+      (is (= fields (#'bibliography/fields-embed-subtitles fields)))))
+  (testing "embedding subtitles of sole subtitle field (edge-case)"
+    (let [fields [(->Field "subtitle" "More or Less")]]
+      (is (= [(->Field "title" "More or Less")] (#'bibliography/fields-embed-subtitles fields))))))
+
+(deftest test-embed-subtitles
+  (testing "embedding subtitles of gloss (no-op)"
+    (let [gloss (->Gloss "Note to self")]
+      (is (= gloss (bibliography/embed-subtitles gloss)))))
+  (testing "embedding subtitles of reference"
+    (let [reference (->Reference "book" "benjamin" [(->Field "title" "A") (->Field "subtitle" "B")])]
+      (is (= (->Reference "book" "benjamin" [(->Field "title" "A: B")])
+             (bibliography/embed-subtitles reference))))))
