@@ -4,7 +4,7 @@
             [clojure.walk :as walk]
             [clojure.zip :as zip]
             [the.parsatron :refer [run defparser let->> >> always attempt bind between choice either many many1
-                                   token any-char char letter letter?]]))
+                                   string token any-char char letter letter?]]))
 
 (defn- any-char-except [x]
   (token #(and (char? %) (not= % x))))
@@ -71,6 +71,16 @@
     ;     would need to (declare tex-token) before (defn tex-group).
     (attempt (between (char \{) (char \}) (many (tex-token))))
     (tex-comment)
+    ; Handle ligatures: plain characters that get tranformed into non-ASCII
+    ; when rendered; see Chapter 9 of The TeX Book, page 51.
+    (attempt (>> (string "---") (always :textemdash)))
+    (attempt (>> (string "--")  (always :textendash)))
+    (attempt (>> (string "``")  (always :textquotedblleft)))
+    (attempt (>> (string "`")   (always :textquoteleft)))
+    (attempt (>> (string "''")  (always :textquotedblright)))
+    (attempt (>> (string "'")   (always :textquoteright)))
+    (attempt (>> (string "!`")  (always :textexclamdown)))
+    (attempt (>> (string "?`")  (always :textquestiondown)))
     ; TODO: handle other escaped things?
     ; parse anything (and everything) else as a raw character, except for },
     ; which we have to fail on so that groups can parse it
@@ -130,16 +140,6 @@
       (zip/root loc)
       (recur (zip/next (f loc))))))
 
-(defn- token->control-char
-  "If `token` (a parsed TeX token) is a control symbol or a 1-letter control word,
-  return its value as a Character. Otherwise, if it's not a control sequence,
-  or is a control word longer than 1-character, return nil."
-  [token]
-  (when (keyword? token)
-    (let [s (name token)]
-      (when (= 1 (count s))
-        (.charAt s 0)))))
-
 ;; actual transformation functions
 
 ; interpret-character-commands
@@ -147,20 +147,72 @@
 ; which is shorter, so we'll go with "command")
 
 (def ^:private command->character
-  {\- nil ; discard escaped hyphens (hyphenation hints)
-   \l \ł
-   \o \ø
-   \i \ı
-   \j \ȷ
-   \\ \newline
-   \# \#
-   \$ \$
-   \% \%
-   \& \&
-   \_ \_
-   \{ \{
-   \} \}
-   \@ \@})
+  {:- nil ; discard escaped hyphens (hyphenation hints)
+   :l \ł
+   :o \ø
+   :i \ı
+   :j \ȷ
+   (keyword "\\") \newline
+   :# \#
+   :$ \$
+   :% \%
+   :& \&
+   :_ \_
+   (keyword "{") \{
+   (keyword "}") \}
+   (keyword "@") \@
+   :copyright \©
+   :textcopyright \©
+   :dag \†
+   :textdagger \†
+   :ddag \‡
+   :textdaggerdbl \‡
+   :guillemotleft \«
+   :guillemotright \»
+   :guilsinglleft \‹
+   :guilsinglright \›
+   :ldots \…
+   :dots \…
+   :textellipsis \…
+   :lq \‘
+   :P \¶
+   :textparagraph \¶
+   :pounds \£
+   :textsterling \£
+   :quotedblbase \„
+   :quotesinglbase \‚
+   :rq \’
+   :S \§
+   :textasciicircum \^
+   :textasciitilde \~
+   :textasteriskcentered \*
+   :textbackslash \\
+   :textbar \|
+   :textbardbl \‖
+   :textbigcircle \◯
+   :textbraceleft \{
+   :textbraceright \}
+   :textbullet \•
+   :textdollar \$
+   :textemdash \—
+   :textendash \–
+   :texteuro \€
+   :textexclamdown \¡
+   :textgreater \>
+   :textless \<
+   :textleftarrow \←
+   :textordfeminine \ª
+   :textordmasculine \º
+   :textperiodcentered \·
+   :textquestiondown \¿
+   :textquotedblleft \“
+   :textquotedblright \”
+   :textquoteleft \‘
+   :textquoteright \’
+   :textregistered \®
+   :textrightarrow \→
+   :texttrademark \™
+   :textunderscore \_})
 
 (defn interpret-character-commands
   "Replace each control sequence in a TeX tree that represents a specific
@@ -169,7 +221,7 @@
   (-> (fn [loc]
         ; take a zipper loc, and if it looks like a command we should replace, do so,
         ; otherwise return the given loc, unchanged
-        (let [control-char (-> loc zip/node token->control-char)]
+        (let [control-char (zip/node loc)]
           ; we have to check contains? since \- returns nil
           (if (contains? command->character control-char)
             (zip/replace loc (get command->character control-char))
@@ -182,21 +234,22 @@
   "Mapping of TeX accent macros (like \\' and \\\") to the corresponding
   Unicode combining character (like ´ and ¨)."
   ; the combining character goes after the character it modifies
-  {\` \u0300
-   \' \u0301
-   \^ \u0302
-   \" \u0308
-   \H \u030B
-   \~ \u0303
-   \c \u0327
-   \k \u0328
-   \= \u0304
-   \b \u0331
-   \. \u0307
-   \d \u0323
-   \r \u030A
-   \u \u0306
-   \v \u030C})
+  {(keyword "`")  \u0300
+   :'             \u0301
+   (keyword "^")  \u0302
+   (keyword "\"") \u0308
+   :H             \u030B
+   (keyword "~")  \u0303
+   :c             \u0327
+   :k             \u0328
+   :=             \u0304
+   :b             \u0331
+   :.             \u0307
+   :d             \u0323
+   :r             \u030A
+   :u             \u0306
+   :v             \u030C
+   :textcircled   \u20DD})
 
 (defn interpret-accent-commands
   "Unescape all accents in TeX node tree.
@@ -208,7 +261,6 @@
   (-> (fn [loc]
         (if-let [combining-character (-> loc
                                          zip/node
-                                         token->control-char
                                          accent-command->combining-character)]
           ; iff we've got an accent command that we recognize...
           (let [; Remove the accent command
