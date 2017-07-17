@@ -1,8 +1,9 @@
 (ns bartleby.language.jats
   (:require [clojure.string :as str]
+            [clojure.zip :as zip]
             [bartleby.util :refer [split-fullname]]
             [bartleby.language.tex :as tex]
-            [clojure.data.xml :refer [element xml-comment emit emit-str]]
+            [clojure.data.xml :as xml :refer [element]]
             [clojure.data.xml.protocols :refer [AsElements as-elements]])
   (:import (java.io Writer)
            (bartleby.bibliography Field Reference Gloss)))
@@ -50,7 +51,7 @@
       (str/trim)
       (str/replace #"-{2,}" "–") ; replace any sequences of multiple hyphens with a single n-dash
       (wrap " ")
-      (xml-comment)))
+      (xml/xml-comment)))
 
 ; mapping from keywordified Field. :key values to (fn [value] ...element(s)...)
 (def ^:private field-mapping {:address #(element :publisher-loc {} %)
@@ -95,19 +96,44 @@
   (as-elements [{:keys [lines]}]
     (list (create-comment (str/join \newline lines)))))
 
-(defn- embed-in-article
-  "wrap ref elements in root article element"
-  [refs]
-  (element :article {:dtd-version "1.1"}
-    (element :back {}
-      (element :ref-list {} refs))))
+(defn- find-or-append
+  "Go through the children of `parent` (a zipper location) in order and find
+  the first loc that matches pred, or insert not-found and return its loc.
+  We have to use the parent, not the first child, since the element may be empty."
+  [parent pred not-found]
+  (loop [loc (zip/down parent)]
+    (if loc
+      (if (pred loc)
+        loc ; found!
+        (recur (zip/right loc))) ; keep going
+      ; otherwise, we're at the end with no match; append and go into the new loc
+      (-> parent (zip/append-child not-found) zip/down zip/rightmost))))
+
+(defn- loc-tag=
+  "Returns a predicate that takes a zipper loc and returns true
+  if that loc's value's tag is equal to `tag`"
+  [tag]
+  (fn tag=?
+    [loc]
+    (= tag (:tag (zip/node loc)))))
+
+(defn set-article-refs
+  "Find the /article/back/ref-list element in article
+  and add all of `entries` as refs (by converting with as-elements) to it"
+  [article entries]
+  (-> (or article (element :article {:dtd-version "1.1"}))
+      (zip/xml-zip)
+      (find-or-append (loc-tag= :back) (element :back {}))
+      (find-or-append (loc-tag= :ref-list) (element :ref-list {}))
+      (zip/replace (xml/element* :ref-list {} (as-elements entries)))
+      (zip/root)))
 
 (defn write-str
-  "Generate XML string with JATS skeleton of /article/back/ref-list/ref elements"
-  [entries]
-  (emit-str (embed-in-article (as-elements entries)) :encoding "UTF-8" :doctype doctype))
+  "Generate XML string with JATS doctype"
+  [e]
+  (xml/emit-str e :encoding "UTF-8" :doctype doctype))
 
 (defn write
-  "Write JATS XML skeleton with /article/back/ref-list/ref elements to writer"
-  [entries ^Writer writer]
-  (emit (embed-in-article (as-elements entries)) writer :encoding "UTF-8" :doctype doctype))
+  "Write JATS XML with JATS doctype"
+  [e ^Writer writer]
+  (xml/emit e writer :encoding "UTF-8" :doctype doctype))

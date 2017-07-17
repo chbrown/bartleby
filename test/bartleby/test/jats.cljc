@@ -6,7 +6,7 @@
 
 (deftest test-write-str
   (testing "rendering Gloss"
-    (let [gloss-xml (jats/write-str (->Gloss ["pagerange=1--9"]))]
+    (let [gloss-xml (jats/write-str (jats/set-article-refs nil (->Gloss ["pagerange=1--9"])))]
       (is (str/includes? gloss-xml "<!-- pagerange=1–9 -->"))))
   (testing "rendering Reference"
     (let [fields (list (->Field "year" "1999")
@@ -14,7 +14,7 @@
                        (->Field "author" "Whatler Benjamin")
                        (->Field "pages" "1--154")
                        (->Field "rating" "11/10"))
-          reference-xml (jats/write-str (->Reference "book" "benj99" fields))]
+          reference-xml (jats/write-str (jats/set-article-refs nil (->Reference "book" "benj99" fields)))]
       (is (str/includes? reference-xml "<ref id=\"benj99\">"))
       (is (str/includes? reference-xml "<year>1999</year>"))
       (is (str/includes? reference-xml "<article-title>Reason</article-title>"))
@@ -40,7 +40,7 @@
                        (->Field "series" "Corrections")
                        (->Field "url" "https://en.wikipedia.org/wiki/BibTeX")
                        (->Field "volume" "4"))
-          reference-xml (jats/write-str (->Reference "article" "reftest2" fields))]
+          reference-xml (jats/write-str (jats/set-article-refs nil (->Reference "article" "reftest2" fields)))]
       (is (str/includes? reference-xml "<source>Collected Works</source>"))
       (is (str/includes? reference-xml "<day>31</day>"))
       (is (str/includes? reference-xml "<pub-id pub-id-type=\"doi\">10.1109/5.771073</pub-id>"))

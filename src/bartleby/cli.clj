@@ -116,11 +116,13 @@
          (map #(core/interpolate % references)))))
 
 (defn jats-command
-  "Parse BibTeX and output each component as JATS XML"
-  [inputs & {:as options}]
+  "Parse BibTeX and output each reference in a full JATS XML article"
+  [inputs & {:keys [update] :as options}]
   (->> inputs
        (mapcat input->items)
        (transform-items (assoc options :embed-subtitles true))
+       (filter bibliography/Reference?)
+       (jats/set-article-refs (some-> update :reader xml/parse))
        (jats/write-str)
        (list)))
 
@@ -181,6 +183,10 @@
    [nil "--embed-subtitles" "Embed (book)subtitle values back into the corresponding (book)title field"
     :id :embed-subtitles
     :default false]
+   [nil "--update XML" "Update the ref-list in this .xml file when exporting JATS format"
+    :id :update
+    :default nil
+    :parse-fn #(NamedReader. % (io/reader %))]
    ["-h" "--help"]
    ["-v" "--version"]])
 
