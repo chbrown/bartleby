@@ -3,7 +3,7 @@
             [clojure.zip :as zip]
             [bartleby.util :refer [split-fullname]]
             [bartleby.language.tex :as tex]
-            [bartleby.bibliography]
+            [bartleby.bibliography] ; otherwise cloverage breaks the AsElements protocol extensions
             [clojure.data.xml :as xml :refer [element]]
             [clojure.data.xml.protocols :refer [AsElements as-elements]])
   (:import (bartleby.bibliography Field Reference Gloss)))
