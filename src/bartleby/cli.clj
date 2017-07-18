@@ -121,7 +121,11 @@
   (->> inputs
        (mapcat input->items)
        (transform-items (assoc options :embed-subtitles true))
+       ; remove any glosses
        (filter bibliography/Reference?)
+       ; include only JATS-relevant fields
+       ; (they'll show up as comments otherwise, which is fine but not ideal for this use-case)
+       (map #(apply bibliography/filter-fields % (map name (keys jats/field-mapping))))
        (jats/set-article-refs (some-> update :reader xml/parse))
        (jats/write-str)
        (list)))
