@@ -108,16 +108,14 @@
            _ (either (char \}) (eof))]
     (always (->Reference pubtype citekey fields))))
 
-(def linebreak (either (>> (char \return) (attempt (char \newline)))
-                       (char \newline)))
-
 (defn gloss-line-characters
   "Captures a single line of interlinear comments,
   i.e., whatever is not a Reference,
   returning a sequence of characters"
   []
   (between (lookahead (token #(not= % \@)))
-           linebreak
+           (either (>> (char \return) (attempt (char \newline))) ; linebreak
+                   (char \newline))
            (many (any-char-except-in #{\return \newline}))))
 
 (defn gloss-line
