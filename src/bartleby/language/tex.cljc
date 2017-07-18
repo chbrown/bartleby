@@ -4,7 +4,7 @@
             [clojure.walk :as walk]
             [clojure.zip :as zip]
             [the.parsatron :refer [run defparser let->> >> always attempt bind between choice either many many1
-                                   string token any-char char letter letter?]]))
+                                   token any-char char letter letter?]]))
 
 (defn- not-letter
   "Consume a non-letter [^a-zA-Z] character."
@@ -70,16 +70,25 @@
     (tex-comment)
     ; Handle ligatures: plain characters that get tranformed into non-ASCII
     ; when rendered; see Chapter 9 of The TeX Book, page 51.
-    (attempt (>> (string "---") (always :textemdash)))
-    (attempt (>> (string "--")  (always :textendash)))
-    (attempt (>> (string "``")  (always :textquotedblleft)))
-    (attempt (>> (string "`")   (always :textquoteleft)))
-    (attempt (>> (string "''")  (always :textquotedblright)))
-    (attempt (>> (string "'")   (always :textquoteright)))
-    (attempt (>> (string "!`")  (always :textexclamdown)))
-    (attempt (>> (string "?`")  (always :textquestiondown)))
+    ; --- and -- and -
+    (>> (char \-) (choice
+                    (>> (char \-) (choice
+                                    (>> (char \-) (always :textemdash))
+                                    (always :textendash)))
+                    (always \-)))
+    ; TODO: maybe handle quotes differently somehow in math environments?
+    ; `` and `
+    (>> (char \`) (choice
+                    (>> (char \`) (always :textquotedblleft))
+                    (always :textquoteleft)))
+    ; '' and '
+    (>> (char \') (choice
+                    (>> (char \') (always :textquotedblright))
+                    (always :textquoteright)))
+    (attempt (>> (char \!) (char \`) (always :textexclamdown)))
+    (attempt (>> (char \?) (char \`) (always :textquestiondown)))
     ; not technically a ligature:
-    (attempt (>> (char \~) (always \u00A0))) ; NO-BREAK SPACE (U+00A0)
+    (>> (char \~) (always \u00A0)) ; NO-BREAK SPACE (U+00A0)
     ; TODO: handle other escaped things?
     ; parse anything (and everything) else as a raw character, except for },
     ; which we have to fail on so that groups can parse it
