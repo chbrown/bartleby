@@ -67,7 +67,7 @@
     ; Nb. This is not its own parser since it's recursive and otherwise we
     ;     would need to (declare tex-token) before (defn tex-group).
     (attempt (between (char \{) (char \}) (many (tex-token))))
-    (tex-comment)
+    ; (tex-comment) ; bibtex uses percent-encoded URLs but this should be enabled in non-bibtex contexts
     ; Handle ligatures: plain characters that get tranformed into non-ASCII
     ; when rendered; see Chapter 9 of The TeX Book, page 51.
     ; --- and -- and -
