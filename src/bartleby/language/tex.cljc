@@ -6,9 +6,6 @@
             [the.parsatron :refer [run defparser let->> >> always attempt bind between choice either many many1
                                    string token any-char char letter letter?]]))
 
-(defn- any-char-except [x]
-  (token #(and (char? %) (not= % x))))
-
 (defn- not-letter
   "Consume a non-letter [^a-zA-Z] character."
   []
@@ -56,7 +53,7 @@
   "Parse a TeX comment. For now, immediately discard the contents, returning only the empty string."
   []
   ; TODO: handle other linebreaks
-  (>> (char \%) (many (any-char-except \newline)) (char \newline) (always "")))
+  (>> (char \%) (many (token #(not= % \newline))) (char \newline) (always "")))
 
 ; Return a TeX tree string built by parsing and then generating TeX strings
 ; in nested parsers, potentially recursively.
@@ -86,7 +83,7 @@
     ; TODO: handle other escaped things?
     ; parse anything (and everything) else as a raw character, except for },
     ; which we have to fail on so that groups can parse it
-    (any-char-except \})))
+    (token #(not= % \}))))
 
 (defn read
   "Parse and simplify the TeX reader into a string of TeX"

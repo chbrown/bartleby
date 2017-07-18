@@ -19,9 +19,6 @@
       (attempt (string (str "\\" c)))
       (token #(not= % c)))))
 
-(defn- any-char-except [x]
-  (token #(and (char? %) (not= % x))))
-
 (defn- any-char-except-in [xs]
   (token #(and (char? %) (not (contains? xs %)))))
 
@@ -119,7 +116,7 @@
   i.e., whatever is not a Reference,
   returning a sequence of characters"
   []
-  (between (lookahead (any-char-except \@))
+  (between (lookahead (token #(not= % \@)))
            linebreak
            (many (any-char-except-in #{\return \newline}))))
 
