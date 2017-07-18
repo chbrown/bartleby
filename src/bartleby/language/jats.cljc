@@ -53,44 +53,69 @@
       (wrap " ")
       (xml/xml-comment)))
 
-; mapping from keywordified Field. :key values to (fn [value] ...element(s)...)
-(def field-mapping {:address #(element :publisher-loc {} %)
-                    :author #(element :person-group {:person-group-type "author"} (as-name-elements %))
-                    :booktitle #(element :source {} %)
-                    :day #(element :day {} %)
-                    :doi #(element :pub-id {:pub-id-type "doi"} %)
-                    :edition #(element :edition {} %)
-                    :editor #(element :person-group {:person-group-type "editor"} (as-name-elements %))
-                    :institution #(element :institution {} %)
-                    :isbn #(element :isbn {} %)
-                    :issn #(element :issn {} %)
-                    :issue #(element :issue {} %) ; "issue" is not a legit BibTeX field but whatever
-                    :journal #(element :source {} %)
-                    :month #(element :month {} %)
-                    :note #(element :comment {} %)
-                    :number #(element :issue {} %)
-                    :page #(as-fpage-lpage-elements %) ; "page" should be "pages" but why not
-                    :pages #(as-fpage-lpage-elements %)
-                    :publisher #(element :publisher-name {} %)
-                    :school #(element :institution {} %)
-                    :series #(element :series {} %)
-                    :title #(element :article-title {} %)
-                    :url #(element :uri {} %)
-                    :volume #(element :volume {} %)
-                    :year #(element :year {} %)})
+(def pubtype-mapping
+  "Mapping from string pubtype (aka. BibTeX entry type) to one of these
+  commonly used types: journal, book, confproc, other"
+  {:article       :journal
+   :book          :book
+   :booklet       :book
+   :conference    :confproc
+   :inbook        :book
+   :incollection  :book
+   :inproceedings :confproc
+   :manual        :other
+   :mastersthesis :other
+   :misc          :other
+   :phdthesis     :other
+   :proceedings   :confproc
+   :techreport    :other
+   :unpublished   :other})
+
+(def field-mapping
+  "Mapping from keywordified Field. :key values to (fn [value] ...element(s)...)"
+  {:address     #(element :publisher-loc {} %)
+   :author      #(element :person-group {:person-group-type "author"} (as-name-elements %))
+   :booktitle   #(element :source {} %)
+   :day         #(element :day {} %)
+   :doi         #(element :pub-id {:pub-id-type "doi"} %)
+   :edition     #(element :edition {} %)
+   :editor      #(element :person-group {:person-group-type "editor"} (as-name-elements %))
+   :institution #(element :institution {} %)
+   :isbn        #(element :isbn {} %)
+   :issn        #(element :issn {} %)
+   :issue       #(element :issue {} %) ; "issue" is not a legit BibTeX field but whatever
+   :journal     #(element :source {} %)
+   :month       #(element :month {} %)
+   :note        #(element :comment {} %)
+   :number      #(element :issue {} %)
+   :page        #(as-fpage-lpage-elements %) ; "page" should be "pages" but why not
+   :pages       #(as-fpage-lpage-elements %)
+   :publisher   #(element :publisher-name {} %)
+   :school      #(element :institution {} %)
+   :series      #(element :series {} %)
+   :title       #(element :article-title {} %)
+   :url         #(element :uri {} %)
+   :volume      #(element :volume {} %)
+   :year        #(element :year {} %)})
+
+(defn- get-from-mapping
+  "Convert k to a string, lower-case it, convert it to a keyword, and find it in m.
+  Useful in combination with pubtype-mapping and field-mapping for handling BibTeX's case-insensitive strings."
+  [m k]
+  (->> (name k) (str/lower-case) (keyword) (get m)))
 
 (extend-protocol AsElements
   Field
   (as-elements [{:keys [key value]}]
-    (let [key-keyword (keyword (str/lower-case key))
+    (let [create-value-element (get-from-mapping field-mapping key)
           value-string (-> value tex/simplify tex/write-str)]
-      (list (if-let [value-element (get field-mapping key-keyword)]
-              (value-element value-string)
+      (list (if create-value-element
+              (create-value-element value-string)
               (create-comment (str key " = " value-string))))))
   Reference
   (as-elements [{:keys [pubtype citekey fields]}]
     (list (element :ref {:id (xml-name citekey)}
-            (element :element-citation {:publication-type pubtype}
+            (element :element-citation {:publication-type (name (get-from-mapping pubtype-mapping pubtype))}
               (as-elements fields)))))
   Gloss
   (as-elements [{:keys [lines]}]
