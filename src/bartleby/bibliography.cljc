@@ -34,9 +34,17 @@
         ; if there are new citekeys in crossref-citekeys, recurse
         (recur extended-citekeys-set)))))
 
+(defn filter-fields
+  "Include only the fields in reference that have a key that occurs in
+  matching-keys, using case-insensitive matching."
+  [reference & matching-keys]
+  (let [whitelist (set (map str/lower-case matching-keys))
+        whitelisted? (fn [field] (contains? whitelist (str/lower-case (:key field))))]
+    (update reference :fields (partial filter whitelisted?))))
+
 (defn remove-fields
   "Remove all of the fields in reference that have a key that occurs in
-  matching-keys, which will be all lower-cased and converted to a set."
+  matching-keys, using case-insensitive matching."
   [reference & matching-keys]
   (let [blacklist (set (map str/lower-case matching-keys))
         blacklisted? (fn [field] (contains? blacklist (str/lower-case (:key field))))]
