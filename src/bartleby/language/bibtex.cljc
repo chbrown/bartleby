@@ -161,12 +161,18 @@
   (letfn [(pcok [item new-state]
             (cons item (lazy-seq (run-parser-seq p endp new-state))))
           (peok [_ {:keys [pos]}]
-            (throw (parsatron/fail (parsatron/show-error (parsatron/unexpect-error "that run-seq parser p would accept an empty string" pos)))))
+            (-> (parsatron/unexpect-error "that run-seq parser p would accept an empty string" pos)
+                (parsatron/show-error)
+                (parsatron/fail)
+                (throw)))
           (perr [err-from-p]
             (letfn [(endpok [_ _]
                       nil)
                     (endperr [err-from-endp]
-                      (throw (parsatron/fail (parsatron/show-error (parsatron/merge-errors err-from-p err-from-endp)))))]
+                      (-> (parsatron/merge-errors err-from-p err-from-endp)
+                          (parsatron/show-error)
+                          (parsatron/fail)
+                          (throw)))]
               (parsatron/parsatron-poline endp state endpok endperr endpok endperr)))]
     (parsatron/parsatron-poline p state pcok perr peok perr)))
 
@@ -181,8 +187,7 @@
 (defn read-all
   "Read input to the end, returning all bibliography items."
   [input]
-  (run-seq (item)
-           (>> tex/whitespace (eof)) input))
+  (run-seq (item) (>> tex/whitespace (eof)) input))
 
 ;;; BIBTEX WRITER
 
