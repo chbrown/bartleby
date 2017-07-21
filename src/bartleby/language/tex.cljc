@@ -147,7 +147,13 @@
   (when loc
     ; it's illegal to call zip/node on the end? loc, so we have to check for that first
     (when-not (zip/end? loc)
-      (blank? (zip/node loc)))))
+      (and (blank? (zip/node loc))
+           ; IF there is something after AND that something is a combining
+           ; character, the current location doesn't count as a blank.
+           (let [right-loc (zip/right loc)]
+             (and (some? right-loc)
+                  (not (zip/end? right-loc))
+                  (not (combining-character? (zip/node right-loc)))))))))
 
 (defn- right-while
   "Go right over nodes until (pred loc) returns false; returns the first loc for
