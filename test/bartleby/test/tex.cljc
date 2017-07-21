@@ -8,6 +8,9 @@
     (is (= "ȧ é î õ ü" (tex->tex "\\.a \\'e \\^{i} \\~o \\\"u")))
     (is (= "ȧ é î õ ü" (tex->tex "\\. a \\' {e} \\^{ i} \\~{ o} \\\" { u}"))))
 
+  (testing "rendering accents without anything to combine with"
+    (is (= " ̇a  ́e ˆy  ̃o  ̈ u `  ̄" (tex->tex "\\.{{a}} \\' {{e}} \\^ { {y}} \\~ { {o}} \\\"{ { u}} \\`{} {\\=}"))))
+
   (testing "rendering fancy characters"
     (is (= "øȷ" (tex->tex "\\o \\j")))
     (is (= "$ øk ȷ" (tex->tex "\\$ \\o k \\j")))
@@ -20,6 +23,7 @@
     (is (= "luxuriously" (tex->tex "luxur\\-ious\\-ly"))))
 
   (testing "unescaping characters"
+    ; technically, this TeX would need to be followed by a \relax or empty group or something
     (is (= "# ̃" (tex->tex "\\# \\~"))))
 
   (testing "merging vacuous blocks"
