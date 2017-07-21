@@ -115,6 +115,33 @@
       (and (char? x) (Character/isWhitespace ^Character x))
       (and (string? x) (str/blank? x))))
 
+(def ^:private accent-command->combining-character
+  "Mapping of TeX accent macros (like \\' and \\\") to the corresponding
+  Unicode combining character (like ´ and ¨)."
+  ; the combining character goes after the character it modifies
+  {(keyword "`")  \u0300
+   :'             \u0301
+   (keyword "^")  \u0302
+   (keyword "\"") \u0308
+   :H             \u030B
+   (keyword "~")  \u0303
+   :c             \u0327
+   :k             \u0328
+   :=             \u0304
+   :b             \u0331
+   :.             \u0307
+   :d             \u0323
+   :r             \u030A
+   :u             \u0306
+   :v             \u030C
+   :textcircled   \u20DD})
+
+(defn- combining-character?
+  [x]
+  (and (char? x) #?(:clj  (= (Character/getType x) Character/NON_SPACING_MARK)
+                    ; figure out a better way to do this in JavaScript
+                    :cljs (contains? (set (vals accent-command->combining-character)) x))))
+
 (defn- loc-blank?
   [loc]
   (when loc
@@ -237,27 +264,6 @@
       (zip-walk tree)))
 
 ; interpret-accent-commands
-
-(def ^:private accent-command->combining-character
-  "Mapping of TeX accent macros (like \\' and \\\") to the corresponding
-  Unicode combining character (like ´ and ¨)."
-  ; the combining character goes after the character it modifies
-  {(keyword "`")  \u0300
-   :'             \u0301
-   (keyword "^")  \u0302
-   (keyword "\"") \u0308
-   :H             \u030B
-   (keyword "~")  \u0303
-   :c             \u0327
-   :k             \u0328
-   :=             \u0304
-   :b             \u0331
-   :.             \u0307
-   :d             \u0323
-   :r             \u030A
-   :u             \u0306
-   :v             \u030C
-   :textcircled   \u20DD})
 
 (defn interpret-accent-commands
   "Unescape all accents in TeX node tree.
