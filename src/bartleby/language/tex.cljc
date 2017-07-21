@@ -128,7 +128,7 @@
   no siblings to the right for which (pred loc) returns false."
   [loc pred]
   (if (pred loc)
-    (right-while (zip/right loc) pred)
+    (recur (zip/right loc) pred)
     loc))
 
 (defn- remove-while
