@@ -1,8 +1,8 @@
 (ns bartleby.language.tex
   (:refer-clojure :exclude [char read flatten])
   (:require [clojure.string :as str]
-            [clojure.walk :as walk]
             [clojure.zip :as zip]
+            [bartleby.util :refer [dedupe-while]]
             [the.parsatron :refer [run defparser let->> >> always attempt bind between choice either many many1
                                    token any-char char letter letter?]]))
 
@@ -164,13 +164,6 @@
     (recur (zip/right loc) pred)
     loc))
 
-(defn- remove-while
-  "Remove loc if (pred loc), move to the next loc, and repeat"
-  [loc pred]
-  (if (pred loc)
-    (recur (-> loc zip/remove zip/next) pred)
-    loc))
-
 (defn- zip-walk
   "Run `f` on each loc in `tree` (a seq), allowing `f` to modify the loc as
   much as wanted / needed."
@@ -256,18 +249,12 @@
    :textunderscore \_})
 
 (defn interpret-character-commands
-  "Replace each control sequence in a TeX tree that represents a specific
-  character with that character."
+  "Replace each command (control sequence) in a TeX tree that represents a
+  specific character, with that character."
   [tree]
-  (-> (fn [loc]
-        ; take a zipper loc, and if it looks like a command we should replace, do so,
-        ; otherwise return the given loc, unchanged
-        (let [control-char (zip/node loc)]
-          ; we have to check contains? since \- returns nil
-          (if (contains? command->character control-char)
-            (zip/replace loc (get command->character control-char))
-            loc)))
-      (zip-walk tree)))
+  (if (coll? tree)
+    (map interpret-character-commands tree)
+    (get command->character tree tree)))
 
 ; interpret-accent-commands
 
@@ -319,31 +306,25 @@
   Group boundaries break contiguity.
   This is a transformation instead of part of the parser since we may want to
   output a tree that is relatively faithful to the input."
+  ; TODO: current implementation is not quite right because it
+  ; indiscriminately removes blanks followed by a combining character
   [tree]
-  (-> (fn [loc]
-        (if (loc-blank? loc)
-          (-> loc zip/next (remove-while loc-blank?))
-          loc))
-      (zip-walk tree)))
+  (if (coll? tree)
+    (dedupe-while blank? (map collapse-space tree))
+    tree))
 
 ; flatten
 
 (defn flatten
-  "Flatten the list of nodes, removing commands and blocks throughout;
-  flatten this node into a string, or nil.
-  Flatten the node at loc, removing it if it's empty, replacing it with its
-  children if there are any, and removing any commands outright."
+  "Flatten tree into a single collection of non-collection nodes:
+  * removes all commands outright
+  * collapses each block"
   [tree]
-  (-> (fn [loc]
-        ; only flatten if loc is a branch AND loc is not the root
-        ;   (zip/path root-loc) returns an empty list
-        (if (and (zip/branch? loc) (seq (zip/path loc)))
-          (zip/remove (reduce zip/insert-right loc (reverse (zip/children loc))))
-          ; or if it's a command, remove it
-          (if (keyword? (zip/node loc))
-            (-> loc zip/remove)
-            loc)))
-      (zip-walk tree)))
+  (if (coll? tree)
+    (mapcat flatten tree)
+    ; if it's a command, remove it
+    (when-not (keyword? tree)
+      (list tree))))
 
 ; transformation pipeline
 
