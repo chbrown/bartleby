@@ -138,7 +138,7 @@
 
 (defn- combining-character?
   [x]
-  (and (char? x) #?(:clj  (= (Character/getType x) Character/NON_SPACING_MARK)
+  (and (char? x) #?(:clj  (= (Character/getType ^char x) Character/NON_SPACING_MARK)
                     ; figure out a better way to do this in JavaScript
                     :cljs (contains? (set (vals accent-command->combining-character)) x))))
 
@@ -354,8 +354,8 @@
   (-format [this] this)
   (-concat [this & xs] (apply str this xs))
   nil
-  (-format [this] nil)
-  (-concat [this & xs] (xs)))
+  (-format [_] nil)
+  (-concat [_ & xs] (xs)))
 
 (defn write-str
   "Convert TeX tree into TeX-formatted string"

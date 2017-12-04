@@ -1,6 +1,5 @@
 (ns bartleby.test.tex
   (:require [clojure.test :refer :all]
-            [bartleby.language.tex :as tex]
             [bartleby.core :refer [tex->tex]]))
 
 (deftest test-tex->tex

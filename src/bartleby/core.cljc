@@ -30,7 +30,7 @@
   "Extract the citekeys from the TeX auxiliary-file string s (using regular expressions)"
   [s]
   ; BibLaTeX uses \abx@aux@cite{...}, BibTeX uses \bibcite{...}; we find either one:
-  (for [[_ command citekey] (re-seq #"\\(abx@aux@cite|bibcite)\{([^}]+)\}" s)]
+  (for [[_ _ citekey] (re-seq #"\\(abx@aux@cite|bibcite)\{([^}]+)\}" s)]
     citekey))
 
 (defn bibtex?

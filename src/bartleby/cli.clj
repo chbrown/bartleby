@@ -95,7 +95,7 @@
 
 (defn test-command
   "Test each file in args and output the ones that are not valid BibTeX"
-  [inputs & options]
+  [inputs & _]
   ; TODO: take filenames, and print the name of each unparseable file to STDERR
   (->> inputs
        (map :reader)
@@ -104,7 +104,7 @@
 
 (defn interpolate-command
   "Replace literal names with cite commands, given .tex and .bib files"
-  [inputs & options]
+  [inputs & _]
   (let [references (->> inputs
                         (filter #(str/ends-with? (:name %) ".bib"))
                         (mapcat input->items)
@@ -241,7 +241,7 @@
 
 (defn -main
   [& argv]
-  (let [{:keys [options arguments summary errors] :as opts} (parse-opts argv cli-options)
+  (let [{:keys [options arguments summary errors]} (parse-opts argv cli-options)
         [command & args] arguments
         command-fn (get commands command)]
     (cond

@@ -4,7 +4,7 @@
             [bartleby.util :refer [split-fullname]]
             [bartleby.language.tex :as tex]
             [bartleby.bibliography] ; otherwise cloverage breaks the AsElements protocol extensions
-            [clojure.data.xml :as xml :refer [element]]
+            [clojure.data.xml :as xml :refer [element* element]]
             [clojure.data.xml.protocols :refer [AsElements as-elements]])
   (:import (bartleby.bibliography Field Reference Gloss)))
 
@@ -148,9 +148,9 @@
   [article entries]
   (-> (or article (element :article {:dtd-version "1.1"}))
       (zip/xml-zip)
-      (find-or-append (loc-tag= :back) (element :back {}))
-      (find-or-append (loc-tag= :ref-list) (element :ref-list {}))
-      (zip/replace (xml/element* :ref-list {} (as-elements entries)))
+      (find-or-append (loc-tag= :back) (element :back))
+      (find-or-append (loc-tag= :ref-list) (element :ref-list))
+      (zip/replace (element* :ref-list nil (as-elements entries)))
       (zip/root)))
 
 (defn write-str

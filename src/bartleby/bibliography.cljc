@@ -115,15 +115,15 @@
   [fields]
   (let [subfields (filter #(re-matches #"(?i).*subtitle" (:key %)) fields)]
     (reduce (fn [fields subfield]
-              (let [{subkey :key, subvalue :value} subfield
+              (let [subkey (:key subfield)
                     ; find companion field(s)
                     companionkey-lower (str/lower-case (str/replace subkey #"(?i)sub" ""))
                     companions (filter #(= (str/lower-case (:key %)) companionkey-lower) fields)
                     ; use the first companion field found
-                    {:keys [key value] :as field} (first companions)]
+                    companion (first companions)]
                 ; add combined field to the other fields
-                (cons (combine-fields field subfield)
-                      (remove #(contains? #{key subkey} (:key %)) fields)))) fields subfields)))
+                (cons (combine-fields companion subfield)
+                      (remove #(contains? #{(:key companion) subkey} (:key %)) fields)))) fields subfields)))
 
 (defn embed-subtitles
   "If item is an instance of Reference, and there are any sub(book)title

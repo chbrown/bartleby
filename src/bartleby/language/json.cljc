@@ -1,6 +1,6 @@
 (ns bartleby.language.json
-  (:require [clojure.string :as str]
-            [bartleby.language.tex :as tex])
+  (:require [bartleby.language.tex :as tex]
+            [bartleby.bibliography])
   (:import (bartleby.bibliography Field Reference Gloss)))
 
 (defprotocol ToJSON
