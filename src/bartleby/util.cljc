@@ -2,6 +2,22 @@
   "Internal API for shared functions, like name manipulation"
   (:require [clojure.string :as str]))
 
+(defn blank?
+  "Like str/blank? but also works for single characters.
+  Returns true iff `x` is any of:
+  * nil
+  * a single whitespace character, represented as a char/java.lang.Character
+  * a single whitespace codePoint, represented as an int
+  * the empty string (or empty CharSequence)
+  * a string (or CharSequence) of all whitespace"
+  [x]
+  (or (nil? x)
+      (and (char?    x) (Character/isWhitespace ^char x))
+      ; TODO: convert long or BigInt to int
+      (and (integer? x) (Character/isWhitespace ^int x))
+      ; java.lang.String implements java.lang.CharSequence
+      (and (string?  x) (str/blank? x))))
+
 (defn collapse-space
   "Replace all sequences of whitespace in s with a single space"
   [s]
