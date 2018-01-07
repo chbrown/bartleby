@@ -10,6 +10,11 @@
   (testing "rendering accents without anything to combine with"
     (is (= " ̇a  ́e ˆy  ̃o  ̈ u `  ̄" (tex->tex "\\.{{a}} \\' {{e}} \\^ { {y}} \\~ { {o}} \\\"{ { u}} \\`{} {\\=}"))))
 
+  (testing "weird command placement"
+    ; Command attachment is eager, left-to-right.
+    ; So, \textbf\'a is treated like \textbf{\'}{a}, not \textbf{\'{a}}
+    (is (= "´a" (tex->tex "\\textbf\\'a"))))
+
   (testing "rendering fancy characters"
     (is (= "øȷ" (tex->tex "\\o \\j")))
     (is (= "$ øk ȷ" (tex->tex "\\$ \\o k \\j")))
