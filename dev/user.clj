@@ -7,13 +7,15 @@
             [clojure.zip :as zip]
             [clojure.java.io :as io]
             [clojure.data.json :as json]
+            [clojure.data.xml :as xml]
             [the.parsatron :as parsatron]
             [bartleby.cli :as cli]
             [bartleby.core :as core]
+            [bartleby.bibliography :refer [->Field ->Reference ->Gloss]]
             [bartleby.language.bibtex :as bibtex]
+            [bartleby.language.jats :as jats]
             [bartleby.language.tex :as tex]
             [bartleby.language.json :refer [toJSON fromJSON]]
-            [bartleby.bibliography :refer [->Field ->Reference ->Gloss]]
             [clojure.tools.trace :as trace]
             [clojure.tools.namespace.repl :refer [refresh refresh-all]]))
 
