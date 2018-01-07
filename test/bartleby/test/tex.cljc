@@ -1,5 +1,5 @@
 (ns bartleby.test.tex
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
             [bartleby.core :refer [tex->tex]]))
 
 (deftest test-tex->tex

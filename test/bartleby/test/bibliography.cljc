@@ -1,5 +1,5 @@
 (ns bartleby.test.bibliography
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
             [bartleby.bibliography :as bibliography :refer [->Field ->Reference ->Gloss]]))
 
 (deftest test-expand-citekeys

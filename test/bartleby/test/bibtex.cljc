@@ -1,5 +1,5 @@
 (ns bartleby.test.bibtex
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.data.json :as json]

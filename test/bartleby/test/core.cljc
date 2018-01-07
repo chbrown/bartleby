@@ -1,5 +1,5 @@
 (ns bartleby.test.core
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
             [clojure.java.io :as io]
             [bartleby.bibliography :refer [->Field ->Reference]]
             [bartleby.core :as core]

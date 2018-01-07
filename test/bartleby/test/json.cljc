@@ -1,5 +1,5 @@
 (ns bartleby.test.json
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
             [bartleby.language.json :refer [toJSON fromJSON]]
             [bartleby.bibliography :as bibliography :refer [->Field ->Reference ->Gloss]]))
 

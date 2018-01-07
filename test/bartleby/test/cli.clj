@@ -1,5 +1,5 @@
 (ns bartleby.test.cli
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [bartleby.cli :as cli]))
