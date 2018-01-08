@@ -1,6 +1,16 @@
 (ns bartleby.test.tex
   (:require [clojure.test :refer [deftest is testing]]
-            [bartleby.core :refer [tex->tex]]))
+            [bartleby.util :refer [normalize-nfc]]
+            [bartleby.language.tex :as tex]))
+
+(defn tex->tex
+  "Parse TeX string, simplify, write TeX string, and normalize to Unicode NFC."
+  [s]
+  (-> s
+      tex/read-str
+      tex/simplify
+      tex/write-str
+      normalize-nfc))
 
 (deftest test-tex->tex
   (testing "rendering accents as combining characters"

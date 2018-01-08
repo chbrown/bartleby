@@ -1,18 +1,9 @@
 (ns bartleby.core
   (:refer-clojure :exclude [read])
   (:require [clojure.string :as str]
-            [bartleby.util :refer [normalize-nfc re-escape author->lastnames format-names]]
+            [bartleby.util :refer [re-escape author->lastnames format-names]]
             [bartleby.language.bibtex :as bibtex]
             [bartleby.language.tex :as tex]))
-
-(defn tex->tex
-  "Parse TeX string, simplify, write TeX string, and normalize to Unicode NFC."
-  [s]
-  (-> s
-      tex/read-str
-      tex/simplify
-      tex/write-str
-      normalize-nfc))
 
 (defn tex->citekeys
   "Extract the citekeys from the TeX document string s. This uses simple
