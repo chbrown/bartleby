@@ -2,6 +2,9 @@
   (:require [clojure.string :as str]
             [bartleby.language.tex :as tex]))
 
+; Field attributes:
+; * `key` is a string
+; * `value` is a TeX structure (usually a sequence of characters)
 (defrecord Field [key value])
 
 (defrecord Reference [pubtype citekey fields])
@@ -53,9 +56,9 @@
 (defn title-case
   "Convert each word in s to title case, using a simple regular expression for detecting words"
   [s]
-  (letfn [(replacer [[_ initial remainder]]
-            (str (str/upper-case initial) (str/lower-case remainder)))]
-    (str/replace (str/lower-case s) #"\b(\w)(\w*)" replacer)))
+  (str/replace (str/lower-case s) #"\b(\w)(\w*)"
+               (fn replacer [[_ initial remainder]]
+                 (str (str/upper-case initial) (str/lower-case remainder)))))
 
 (defn match-case
   "Change the case of s to match the case pattern of prototype.
@@ -118,9 +121,8 @@
               (let [subkey (:key subfield)
                     ; find companion field(s)
                     companionkey-lower (str/lower-case (str/replace subkey #"(?i)sub" ""))
-                    companions (filter #(= (str/lower-case (:key %)) companionkey-lower) fields)
                     ; use the first companion field found
-                    companion (first companions)]
+                    companion (first (filter #(= (str/lower-case (:key %)) companionkey-lower) fields))]
                 ; add combined field to the other fields
                 (cons (combine-fields companion subfield)
                       (remove #(contains? #{(:key companion) subkey} (:key %)) fields)))) fields subfields)))
