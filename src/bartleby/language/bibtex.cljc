@@ -196,23 +196,23 @@
 (def ^{:dynamic true :private true} *trailing-newline?*)
 (def ^{:dynamic true :private true} *=-padded?*)
 
-(defprotocol BibTeXFormatter
+(defprotocol BibTeXWriter
   "Handle formatting of bibliography items into BibTeX strings"
-  (-format [this] "Format this as a BibTeX string"))
+  (-write-str [this] "Format this as a BibTeX string"))
 
-(extend-protocol BibTeXFormatter
+(extend-protocol BibTeXWriter
   Field
-  (-format [{:keys [key value]}]
+  (-write-str [{:keys [key value]}]
     (str *indentation* key (when *=-padded?* \space) \= (when *=-padded?* \space) (tex/-format value)))
   Reference
-  (-format [{:keys [pubtype citekey fields]}]
+  (-write-str [{:keys [pubtype citekey fields]}]
     ; omit citekey (and the comma after) if citekey is nil
     (str \@ pubtype \{ (some-> citekey (str \,)) \newline
-         (str/join (str \, \newline) (map -format fields))
+         (str/join (str \, \newline) (map -write-str fields))
          (when *trailing-comma?* \,) (when *trailing-newline?* \newline)
          \} \newline))
   Gloss
-  (-format [{:keys [lines]}]
+  (-write-str [{:keys [lines]}]
     (str/join \newline lines)))
 
 (defn write-str
@@ -227,7 +227,7 @@
               *trailing-comma?*   trailing-comma?
               *trailing-newline?* trailing-newline?
               *=-padded?*         =-padded?]
-      (-format item))))
+      (-write-str item))))
 
 (defn write
   "Write BibTeX-formatted output to a java.io.Writer."
