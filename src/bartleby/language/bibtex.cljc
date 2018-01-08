@@ -1,14 +1,25 @@
 (ns bartleby.language.bibtex
   (:refer-clojure :exclude [char comment read]) ; avoid warning about parsatron overriding (char)
   (:require [clojure.string :as str]
-            [the.parsatron :as parsatron :refer [run let->> >> always attempt between char choice digit either eof lookahead many many1 string token]]
+            [the.parsatron :as parsatron :refer [run let->> >> always attempt between bind char choice digit either eof lookahead many many1 string token]]
             [bartleby.bibliography :refer [->Field ->Reference ->Gloss]]
             [bartleby.language.tex :as tex])
   (:import (bartleby.bibliography Field Reference Gloss)))
 
 ;;; BIBTEX READER
 
-(def ^:private delimiter-chars (into tex/whitespace-chars #{\, \{ \} \=}))
+(def whitespace-characters
+  "Same as tex/whitespace-characters; see comment there."
+  #{\tab \newline \u000B \formfeed \return \space})
+
+(def delimiter-characters
+  "Union of whitespace-characters and a few additional delimiters."
+  (conj whitespace-characters \, \{ \} \=))
+
+(defn- space
+  "Consume a single whitespace character"
+  []
+  (token whitespace-characters))
 
 (defn- until-escapable
   "greedily consume the input until hitting the designated token,
@@ -26,25 +37,28 @@
   "Match any BibTeX-valid naked identifier, like pubtype, citekey, or field key,
   i.e., a contiguous string of anything but whitespace, commas, and end braces."
   []
-  (let->> [chars (many1 (any-char-except-in delimiter-chars))]
-    (always (str/join chars))))
+  (bind (many1 (any-char-except-in delimiter-characters))
+        (fn [chars]
+          (always (str/join chars)))))
 
 (defn simple-string
   "Read a simple string literal and convert to TeX syntax"
   []
-  (let->> [chars (until-escapable \")]
-    (let [s (str/join chars)
-          ; unescaped quotes
-          raw (str/replace s #"\\\"" "\"")
-          ; escaped braces
-          escaped (str/replace raw #"[{}]" "\\\\$0")]
-      (always escaped))))
+  (bind (until-escapable \")
+        (fn [chars]
+          (let [s (str/join chars)
+                ; unescaped quotes
+                raw (str/replace s #"\\\"" "\"")
+                ; escaped braces
+                escaped (str/replace raw #"[{}]" "\\\\$0")]
+            (always escaped)))))
 
 (defn number-literal
   "Consume one or more digits and return a string in TeX syntax (in curly braces)"
   []
-  (let->> [chars (many1 (digit))]
-    (always (str/join chars))))
+  (bind (many1 (digit))
+        (fn [chars]
+          (always (str/join chars)))))
 
 (defn- maybe [p]
   ; not sure if the "attempt" is necessary, but it seems like attempt really ought
@@ -74,13 +88,13 @@
   field pair and consume the following comma and whitespace, if any."
   []
   (let->> [key (word)
-           _ tex/whitespace
+           _ (many (space))
            _ (char \=)
-           _ tex/whitespace
+           _ (many (space))
            value (field-value)
-           _ tex/whitespace
+           _ (many (space))
            _ (maybe (char \,))
-           _ tex/whitespace]
+           _ (many (space))]
     (always (->Field key value))))
 
 (defn- before
@@ -97,9 +111,9 @@
   (let->> [_ (char \@)
            pubtype (word)
            _ (char \{)
-           _ tex/whitespace
-           citekey (maybe (before (>> tex/whitespace (char \,)) (word)))
-           _ tex/whitespace
+           _ (many (space))
+           citekey (maybe (before (>> (many (space)) (char \,)) (word)))
+           _ (many (space))
            fields (many (attempt (field)))
            ; handle entries closed by eof rather than a proper close brace,
            ; which happens quite a bit more than you'd think
@@ -118,23 +132,18 @@
                    (char \newline))
            (many (any-char-except-in #{\return \newline}))))
 
-(defn gloss-line
-  ; TODO: create a parsastron helper to map a parser's cok/eok values through the given function and merge this wrapper with gloss-line-characters
-  []
-  (let->> [characters (gloss-line-characters)]
-    (always (str/join characters))))
-
 (defn gloss
   "Capture inter-entry content in BibTeX, returning a Gloss record"
   []
-  (let->> [lines (many1 (gloss-line))]
-    (always (->Gloss lines))))
+  (bind (many1 (gloss-line-characters))
+        (fn [line-characterss]
+          (always (->Gloss (map str/join line-characterss))))))
 
 (defn item
   "Capture any valid bibtex item, potentially preceded by whitespace"
   []
   ; reference and gloss very intentionally have no shareable prefix, so no (attempt ...) is needed
-  (>> tex/whitespace
+  (>> (many (space))
       ; TODO: handle special commands like @preamble or @string.
       (choice (reference)
               (gloss))))
@@ -158,22 +167,21 @@
 (defn- run-parser-seq
   "Similar to parsatron/run-parser"
   [p endp state]
-  (letfn [(pcok [item new-state]
-            (cons item (lazy-seq (run-parser-seq p endp new-state))))
-          (peok [_ {:keys [pos]}]
-            (-> (parsatron/unexpect-error "that run-seq parser p would accept an empty string" pos)
-                (parsatron/show-error)
-                (parsatron/fail)
-                (throw)))
-          (perr [err-from-p]
-            (letfn [(endpok [_ _]
-                      nil)
-                    (endperr [err-from-endp]
-                      (-> (parsatron/merge-errors err-from-p err-from-endp)
-                          (parsatron/show-error)
-                          (parsatron/fail)
-                          (throw)))]
-              (parsatron/parsatron-poline endp state endpok endperr endpok endperr)))]
+  (let [pcok (fn pcok [item new-state]
+               (cons item (lazy-seq (run-parser-seq p endp new-state))))
+        peok (fn peok [_ {:keys [pos]}]
+               (-> (parsatron/unexpect-error "that run-seq parser p would accept an empty string" pos)
+                   (parsatron/show-error)
+                   (parsatron/fail)
+                   (throw)))
+        perr (fn perr [err-from-p]
+               (let [endpok  (fn endpok [_ _] nil)
+                     endperr (fn endperr [err-from-endp]
+                               (-> (parsatron/merge-errors err-from-p err-from-endp)
+                                   (parsatron/show-error)
+                                   (parsatron/fail)
+                                   (throw)))]
+                 (parsatron/parsatron-poline endp state endpok endperr endpok endperr)))]
     (parsatron/parsatron-poline p state pcok perr peok perr)))
 
 (defn- run-seq
@@ -187,7 +195,7 @@
 (defn read-all
   "Read input to the end, returning all bibliography items."
   [input]
-  (run-seq (item) (>> tex/whitespace (eof)) input))
+  (run-seq (item) (>> (many (space)) (eof)) input))
 
 ;;; BIBTEX WRITER
 
