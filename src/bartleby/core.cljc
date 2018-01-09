@@ -39,8 +39,8 @@
   with :match, :output, and :priority keys."
   [r]
   (let [{:keys [citekey fields]} r
-        author (some->> fields (filter #(= (:key %) "author")) first :value tex/simplify tex/write-str author->lastnames format-names)
-        year (->> fields (filter #(= (:key %) "year")) first :value tex/simplify tex/write-str)]
+        author (some->> fields (filter #(= (:key %) "author")) first :value tex/interpret-commands tex/write-str author->lastnames format-names)
+        year (->> fields (filter #(= (:key %) "year")) first :value tex/interpret-commands tex/write-str)]
     (when (and author year)
       ; priority is so that greedier replacements happen first
       ; too ambiguous:

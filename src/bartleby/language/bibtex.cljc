@@ -211,7 +211,7 @@
 (extend-protocol BibTeXWriter
   Field
   (-write-str [{:keys [key value]}]
-    (str *indentation* key (when *=-padded?* \space) \= (when *=-padded?* \space) (tex/-format value)))
+    (str *indentation* key (when *=-padded?* \space) \= (when *=-padded?* \space) \{ (tex/write-str value) \}))
   Reference
   (-write-str [{:keys [pubtype citekey fields]}]
     ; omit citekey (and the comma after) if citekey is nil

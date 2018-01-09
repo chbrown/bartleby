@@ -1,16 +1,21 @@
 (ns bartleby.test.tex
   (:require [clojure.test :refer [deftest is testing]]
+            [clojure.string :as str]
             [bartleby.util :refer [normalize-unicode]]
             [bartleby.language.tex :as tex]))
 
 (defn tex->tex
-  "Parse TeX string, simplify, write TeX string, and normalize to Unicode NFC."
+  "Parse TeX string, interpret commands (flattening groups),
+  write TeX string, and normalize to Unicode NFKC."
   [s]
   (-> s
       tex/read-str
-      tex/simplify
+      tex/interpret-commands
       tex/write-str
-      normalize-unicode))
+      normalize-unicode
+      ; (?!\p{M}) is a negative lookahead for a character in a Unicode <any>-Mark category
+      ; this lets combining characters hold onto the character they're combining with
+      (str/replace #" +(?!\p{M})" " ")))
 
 (deftest test-tex->tex
   (testing "rendering accents as combining characters"

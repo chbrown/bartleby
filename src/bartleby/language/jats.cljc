@@ -108,7 +108,7 @@
   Field
   (as-elements [{:keys [key value]}]
     (let [create-value-element (get-from-mapping field-mapping key)
-          value-string (-> value tex/simplify tex/write-str)]
+          value-string (-> value tex/interpret-commands tex/write-str)]
       (list (if create-value-element
               (create-value-element value-string)
               (create-comment (str key " = " value-string))))))

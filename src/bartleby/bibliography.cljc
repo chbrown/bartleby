@@ -109,7 +109,7 @@
   [field subfield]
   (let [{subkey :key, subvalue :value} subfield]
     (if field
-      (update field :value tex/-concat ": " subvalue)
+      (update field :value #(tex/join (list \: \space) (list % subvalue)))
       ; weird to have a subtitle but no title, but we'll do our best
       (Field. (str/replace subkey #"(?i)sub" "") subvalue))))
 
