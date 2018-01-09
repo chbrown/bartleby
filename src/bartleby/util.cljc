@@ -28,11 +28,12 @@
   [f kvs]
   (into {} (for [[k v] kvs] [k (f v)])))
 
-(defn normalize-nfc
-  "NFC-normalize the string s"
+(defn normalize-unicode
+  "NFKC-normalize the string s.
+  See https://unicode.org/reports/tr15/"
   [s]
-  #?(:clj (java.text.Normalizer/normalize s java.text.Normalizer$Form/NFC)
-     :cljs (.normalize s "NFC")))
+  #?(:clj (java.text.Normalizer/normalize s java.text.Normalizer$Form/NFKC)
+     :cljs (.normalize s "NFKC")))
 
 (defn re-escape
   "Escape any regular expression syntax characters in s such that the result can be

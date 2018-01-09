@@ -13,7 +13,7 @@
 
 (defn- normalize-value
   [value]
-  (some-> value util/normalize-nfc util/collapse-space))
+  (some-> value util/normalize-unicode util/collapse-space))
 
 (defn- normalize-json
   [obj]
