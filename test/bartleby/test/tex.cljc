@@ -23,7 +23,7 @@
   (testing "weird command placement"
     ; Command attachment is eager, left-to-right.
     ; So, \textbf\'a is treated like \textbf{\'}{a}, not \textbf{\'{a}}
-    (is (= "´a" (tex->tex "\\textbf\\'a"))))
+    (is (= (normalize-unicode "´a") (tex->tex "\\textbf\\'a"))))
 
   (testing "rendering fancy characters"
     (is (= "øȷ" (tex->tex "\\o \\j")))
