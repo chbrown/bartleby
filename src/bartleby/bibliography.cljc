@@ -43,7 +43,7 @@
   [reference & matching-keys]
   (let [whitelist (set (map str/lower-case matching-keys))
         whitelisted? (fn [field] (contains? whitelist (str/lower-case (:key field))))]
-    (update reference :fields (partial filter whitelisted?))))
+    (update reference :fields #(filter whitelisted? %))))
 
 (defn remove-fields
   "Remove all of the fields in reference that have a key that occurs in
@@ -51,7 +51,7 @@
   [reference & matching-keys]
   (let [blacklist (set (map str/lower-case matching-keys))
         blacklisted? (fn [field] (contains? blacklist (str/lower-case (:key field))))]
-    (update reference :fields (partial remove blacklisted?))))
+    (update reference :fields #(remove blacklisted? %))))
 
 (defn title-case
   "Convert each word in s to title case, using a simple regular expression for detecting words"
