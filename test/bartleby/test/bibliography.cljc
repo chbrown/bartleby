@@ -65,7 +65,7 @@
   (testing "embedding subtitles of split fields"
     (let [fields [(->Field "title" "All of Everything")
                   (->Field "subtitle" "More or Less")]]
-      (is (= [(->Field "title" "All of Everything: More or Less")]
+      (is (= [(->Field "title" (seq "All of Everything: More or Less"))]
              (#'bibliography/fields-embed-subtitles fields)))))
   (testing "embedding subtitles of unsplit field"
     (let [fields [(->Field "title" "All of Everything: More or Less")]]
@@ -79,6 +79,7 @@
     (let [gloss (->Gloss "Note to self")]
       (is (= gloss (bibliography/embed-subtitles gloss)))))
   (testing "embedding subtitles of reference"
-    (let [reference (->Reference "book" "benjamin" [(->Field "title" "A") (->Field "subtitle" "B")])]
-      (is (= (->Reference "book" "benjamin" [(->Field "title" "A: B")])
+    (let [reference (->Reference "book" "benjamin" [(->Field "title" "A")
+                                                    (->Field "subtitle" "B")])]
+      (is (= (->Reference "book" "benjamin" [(->Field "title" (seq "A: B"))])
              (bibliography/embed-subtitles reference))))))
