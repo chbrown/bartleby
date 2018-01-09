@@ -1,7 +1,7 @@
 (ns bartleby.language.json
   (:require [bartleby.language.tex :as tex]
-            [bartleby.bibliography])
-  (:import (bartleby.bibliography Field Reference Gloss)))
+            [bartleby.bibliography #?@(:cljs [:refer [Field Reference Gloss]])])
+  #?(:clj (:import (bartleby.bibliography Field Reference Gloss))))
 
 (defprotocol ToJSON
   "Complex data structures to be transformed before serializing as JSON should

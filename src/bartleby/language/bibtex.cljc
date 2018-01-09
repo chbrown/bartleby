@@ -2,9 +2,10 @@
   (:refer-clojure :exclude [char comment read]) ; avoid warning about parsatron overriding (char)
   (:require [clojure.string :as str]
             [the.parsatron :as parsatron :refer [run let->> >> always attempt between bind char choice digit either eof lookahead many many1 string token]]
-            [bartleby.bibliography :refer [->Field ->Reference ->Gloss]]
+            [bartleby.bibliography :refer [->Field ->Reference ->Gloss
+                                           #?@(:cljs [Field Reference Gloss])]]
             [bartleby.language.tex :as tex])
-  (:import (bartleby.bibliography Field Reference Gloss)))
+  #?(:clj (:import (bartleby.bibliography Field Reference Gloss))))
 
 ;;; BIBTEX READER
 

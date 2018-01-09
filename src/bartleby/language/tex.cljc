@@ -209,10 +209,10 @@
   ControlSequence
   (write-str [control-sequence]
     (str \\ (:name control-sequence)))
-  Character
-  (write-str [character]
-    character)
-  String
+  #?@(:clj [Character
+            (write-str [character]
+              character)])
+  #?(:clj String :cljs string)
   (write-str [string]
     string)
   nil
@@ -357,7 +357,7 @@
   [tree]
   (condp instance? tree
     ; reduce sequences via interpret-tokens
-    clojure.lang.Sequential (interpret-tokens tree)
+    #?(:clj clojure.lang.Sequential :cljs ICollection) (interpret-tokens tree)
     ; extract the contents of a group (and drop the group-ness)
     Group (interpret-tokens (:coll tree))
     ; interpret a lone command; commands that are used in a proper sequence won't end up here,

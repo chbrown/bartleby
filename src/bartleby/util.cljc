@@ -7,16 +7,14 @@
   Returns true iff `x` is any of:
   * nil
   * a single whitespace character, represented as a char/java.lang.Character
-  * a single whitespace codePoint, represented as an int
   * the empty string (or empty CharSequence)
   * a string (or CharSequence) of all whitespace"
   [x]
   (or (nil? x)
-      (and (char?    x) (Character/isWhitespace ^char x))
-      ; TODO: convert long or BigInt to int
-      (and (integer? x) (Character/isWhitespace ^int x))
+      (and (char? x)   #?(:clj  (Character/isWhitespace ^char x)
+                          :cljs (re-matches #"\s" x)))
       ; java.lang.String implements java.lang.CharSequence
-      (and (string?  x) (str/blank? x))))
+      (and (string? x) (str/blank? x))))
 
 (defn collapse-space
   "Replace all sequences of whitespace in s with a single space"

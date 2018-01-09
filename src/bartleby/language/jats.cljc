@@ -3,14 +3,15 @@
             [clojure.zip :as zip]
             [bartleby.util :refer [split-fullname]]
             [bartleby.language.tex :as tex]
-            [bartleby.bibliography] ; otherwise cloverage breaks the AsElements protocol extensions
+            ; must require 'bartleby.bibliography here; otherwise cloverage breaks the AsElements protocol extensions
+            [bartleby.bibliography #?@(:cljs [:refer [Field Reference Gloss]])]
             [clojure.data.xml :as xml :refer [element* element]]
             [clojure.data.xml.protocols :refer [AsElements as-elements]])
-  (:import (bartleby.bibliography Field Reference Gloss)))
+  #?(:clj (:import (bartleby.bibliography Field Reference Gloss))))
 
 (def ^:private public-identifier "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.1 20151215//EN")
 (def ^:private system-identifier "https://jats.nlm.nih.gov/publishing/1.1/JATS-journalpublishing1.dtd")
-(def ^:private doctype (format "<!DOCTYPE article PUBLIC \"%s\" \"%s\">" public-identifier system-identifier))
+(def ^:private doctype (str "<!DOCTYPE article PUBLIC \"" public-identifier "\" \"" system-identifier "\">"))
 
 (defn- wrap
   "Wrap the string s in left and right padding"
@@ -158,7 +159,9 @@
   [e]
   (xml/emit-str e :encoding "UTF-8" :doctype doctype))
 
-(defn write
-  "Write JATS XML with JATS doctype"
-  [e ^java.io.Writer writer]
-  (xml/emit e writer :encoding "UTF-8" :doctype doctype))
+
+#?(:clj
+  (defn write
+    "Write JATS XML with JATS doctype"
+    [e ^java.io.Writer writer]
+    (xml/emit e writer :encoding "UTF-8" :doctype doctype)))
