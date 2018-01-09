@@ -74,28 +74,3 @@
                       ; group 2: simply take the final name
                       (list (str/join ", " (butlast names)) (last names))
                       names)))
-
-(defn dedupe-while
-  "Similar to (clojure.core/dedupe) but removes duplicate consecutive items
-  from coll for which (f item) returns true.
-  Returns a transducer when no collection is provided."
-  ([f]
-   (fn [xf]
-     (let [*inside? (volatile! false)]
-       (fn
-         ([] (xf))
-         ([result] (xf result))
-         ([result input]
-          ; inside? | current? | input action | set inside?
-          ; true    | true     | ignore       |
-          ; true    | false    | use          | set to false
-          ; false   | true     | use          | set to true
-          ; false   | false    | use          |
-          (let [inside? @*inside?
-                current? (f input)]
-            (when (not= inside? current?)
-              (vreset! *inside? current?))
-            (if (and inside? current?)
-              result
-              (xf result input))))))))
-  ([f coll] (sequence (dedupe-while f) coll)))

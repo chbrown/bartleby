@@ -11,7 +11,7 @@
   6. Sequential: a seq of TeX nodes (or empty, equivalent to nil)"
   (:refer-clojure :exclude [char read])
   (:require [clojure.string :as str]
-            [bartleby.util :refer [blank? dedupe-while]]
+            [bartleby.util :refer [blank?]]
             [the.parsatron :refer [run defparser let->>
                                    always attempt
                                    >> nxt bind
