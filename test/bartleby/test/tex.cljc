@@ -18,7 +18,8 @@
     (is (= "ȧ é î õ ü" (tex->tex "\\. a \\' {e} \\^{ i} \\~{ o} \\\" { u}"))))
 
   (testing "rendering accents without anything to combine with"
-    (is (= " ̇a  ́e ˆy  ̃o  ̈ u `  ̄" (tex->tex "\\.{{a}} \\' {{e}} \\^ { {y}} \\~ { {o}} \\\"{ { u}} \\`{} {\\=}"))))
+    ; without the \relax, the last \= would be a syntax error
+    (is (= " ̇a  ́e ˆy  ̃o  ̈ u `  ̄" (tex->tex "\\.{{a}} \\' {{e}} \\^ { {y}} \\~ { {o}} \\\"{ { u}} \\`{} {\\=\\relax}"))))
 
   (testing "weird command placement"
     ; Command attachment is eager, left-to-right.
@@ -37,8 +38,8 @@
     (is (= "luxuriously" (tex->tex "luxur\\-ious\\-ly"))))
 
   (testing "unescaping characters"
-    ; technically, this TeX would need to be followed by a \relax or empty group or something
-    (is (= "# ̃" (tex->tex "\\# \\~"))))
+    ; technically, the \~ in this TeX has to be followed by a \relax or empty group or something
+    (is (= "# ̃" (tex->tex "\\# \\~\\relax"))))
 
   (testing "merging vacuous blocks"
     (is (= "ABC" (tex->tex "A{B{C}}")))))
