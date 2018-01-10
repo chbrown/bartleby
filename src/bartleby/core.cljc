@@ -57,18 +57,21 @@
         :priority 100}])))
 
 (defn interpolate
-  "Replace literal names (plaintext citations) in the TeX document string tex with
-  cite* commands, for names that are recognized by patterns generated from references."
+  "Replace literal names (plaintext citations) in the TeX Group `document`
+  with cite* commands, for names that are recognized by patterns generated
+  from `references`."
   ; also need to support:
   ;   oxford commas
   ;   '&' as author separator instead of 'and'
   ;   et. al instead of all authors listed out
-  [tex references]
-  (let [replacements (sort-by :priority (mapcat reference->replacements references))
+  [document references]
+  {:pre  [(tex/Group? document)]
+   :post [(tex/Group? %)]}
+  (let [replacements (sort-by (comp - :priority) (mapcat reference->replacements references))
         ; prepare mapping from match string to output string
-        replacements-lookup (reduce #(assoc %1 (:match %2) (:output %2)) {} replacements)
-        all-matches-pattern (->> (map :match replacements)
-                                 (map re-escape)
-                                 (str/join \|)
-                                 (re-pattern))]
-    (str/replace tex all-matches-pattern #(get replacements-lookup % (str "no output found for '" % "'")))))
+        replacements-lookup (into {} (map (fn [{:keys [match output]}]
+                                            [(:tokens (tex/read-str match)) (:tokens (tex/read-str output))]) replacements))
+        replacer (fn [m] (get replacements-lookup (tex/write-str m)
+                              (str "no output found for '" (tex/write-str m) "'")))]
+    (reduce (fn [document pattern]
+              (tex/replace document (:tokens (tex/read-str pattern)) replacer)) document (map :match replacements))))

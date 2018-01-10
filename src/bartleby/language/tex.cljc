@@ -254,6 +254,58 @@
   ([separator documents]
    (Group. (apply concat (interpose separator (map :tokens documents))))))
 
+(defn split
+  "Split `document` into two at the first occurrence of `separator` at the root level.
+  Returns a sequence of a single Group if `separator` is not found."
+  [document separator]
+  {:pre [(instance? Group document)
+         (char? separator)]}
+  (let [[prefix [_ & suffix]] (split-with #(not= separator %) (:tokens document))]
+    (cons (Group. prefix) (when suffix (list (Group. suffix))))))
+
+(defn triml
+  [document]
+  {:pre [(instance? Group document)]}
+  (update document :tokens #(drop-while blank? %)))
+
+(defn trimr
+  [document]
+  {:pre [(instance? Group document)]}
+  ; reverse; drop from left-to-right; then reverse back to the original order
+  ; TODO: is there a smarter way to do this?
+  (update document :tokens #(->> % reverse (drop-while blank?) reverse)))
+
+(defn- index-of-sublist
+  "Return the position of `target` within `source`,
+  or nil if `target` cannot be found."
+  ; thanks to https://stackoverflow.com/a/15224555
+  [source target]
+  {:pre [(coll? source) (coll? target)]}
+  #?(:clj  (let [index (java.util.Collections/indexOfSubList source target)]
+             (when (not= index -1)
+               index))
+     :cljs (throw (ex-info "index-of-sublist not yet implemented in CLJS" {:source source :target target}))))
+
+(defn replace
+  "Search for `pattern` within `document` (within the root-level tokens), replacing via `replacement` if found.
+  `replacement` can be a function (which will be called with subsequence matched by `pattern`) or a literal value."
+  ; TODO: search at all levels, not just the root.
+  [document pattern-tokens replacement]
+  {:pre  [(instance? Group document)
+          (coll? pattern-tokens)
+          (or (coll? replacement) (fn? replacement))]
+   :post [(instance? Group %)]}
+  (loop [tokens (:tokens document)]
+    (if-let [index-of-pattern (index-of-sublist tokens pattern-tokens)]
+      (let [[prefix suffix] (split-at index-of-pattern tokens)
+            ; `prefix` is everything up until `pattern-tokens`
+            ; `suffix` starts with `pattern-tokens`
+            replacement-value (if (fn? replacement)
+                                (replacement (take (count pattern-tokens) suffix))
+                                replacement)]
+        (recur (concat prefix replacement-value (drop (count pattern-tokens) suffix))))
+      (Group. tokens))))
+
 ;; interpretation
 
 (def command->character

@@ -76,10 +76,10 @@
   and return both; otherwise return a singleton vector of the original field"
   [field suffix-key]
   (let [{:keys [key value]} field
-        [prefix suffix] (str/split value #":" 2)]
+        [prefix suffix] (tex/split value \:)]
     (if suffix
-      (list (Field. key (str/trimr prefix))
-            (Field. suffix-key (str/triml suffix)))
+      (list (Field. key (tex/trimr prefix))
+            (Field. suffix-key (tex/triml suffix)))
       (list field))))
 
 (defn- fields-extract-subtitles
