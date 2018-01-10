@@ -12,8 +12,8 @@
   (:refer-clojure :exclude [char read])
   (:require [clojure.string :as str]
             [bartleby.util :refer [blank?]]
-            [the.parsatron :refer [run defparser let->>
-                                   always attempt
+            [the.parsatron :refer [run defparser
+                                   always attempt between
                                    >> nxt bind
                                    choice either
                                    many many1 times
@@ -149,10 +149,9 @@
   or the empty vector, [], if the group is empty,
   because parsatron/many returns [] for 0 matches rather than nil."
   []
-  (let->> [_ (char \{)
-           tokens (many (tex-token))
-           _ (char \})]
-    (always (Group. tokens))))
+  (bind (between (char \{) (char \}) (many (tex-token)))
+        (fn [tokens]
+          (always (Group. tokens)))))
 
 ; Return a TeX tree string built by parsing and then generating TeX strings
 ; in nested parsers, potentially recursively.
