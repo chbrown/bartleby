@@ -5,11 +5,10 @@
   1. Character: which is the form of the input, read character-by-character
   2. String: which can always be treated as a flattened out sequence of characters
   3. nil: indicating a gap, which should be considered equivalent to the empty string, and thus, vacuous
-  4. Group: a special record wrapping a collection, indicating that the contents are to be treated as a TeX 'group'
-  5. ControlSequence: a special record with a single field:
-     * `name`: a string (a single non-letter for control symbols)
-  6. Sequential: a seq of TeX nodes (or empty, equivalent to nil)"
-  (:refer-clojure :exclude [char read])
+  4. Group: a record wrapping a collection, indicating that the contents are to be treated as a TeX 'group'
+  5. ControlSequence: a record with a single field:
+     * `name`: a string (a single non-letter for control symbols)"
+  (:refer-clojure :exclude [char read replace])
   (:require [clojure.string :as str]
             [bartleby.util :refer [blank?]]
             [the.parsatron :refer [run defparser
@@ -19,7 +18,12 @@
                                    many many1 times
                                    token char letter?]]))
 
-(defrecord Group [coll])
+(defrecord Group [tokens])
+
+(defn Group?
+  "Return true if `value` is an instance of the Group class"
+  [value]
+  (instance? Group value))
 
 (defrecord ControlSequence [name])
 
@@ -142,16 +146,15 @@
 (declare tex-token)
 
 (defn group
-  "parse a TeX 'group', starting with an opening curly brace, {,
+  "Parse a TeX 'group', starting with an opening curly brace, {,
   recursing as needed, until it hits the matching closing brace, }.
   { and } are synonyms for \\bgroup and \\egroup, respectively.
-  returns a Group instance, whose coll is a list of tex tokens,
-  or the empty vector, [], if the group is empty,
-  because parsatron/many returns [] for 0 matches rather than nil."
+  Returns a Group instance."
   []
   (bind (between (char \{) (char \}) (many (tex-token)))
         (fn [tokens]
-          (always (Group. tokens)))))
+          ; TODO: remove the (seq ...) when parsatron/many (which returns [] for 0 matches rather than nil) is fixed
+          (always (Group. (seq tokens))))))
 
 ; Return a TeX tree string built by parsing and then generating TeX strings
 ; in nested parsers, potentially recursively.
@@ -181,42 +184,60 @@
     ; which we have to fail on so that groups can parse it
     (token #(not= % \}))))
 
+(defn tex-document
+  "Parse a sequence of TeX tokens as a Group instance.
+  Unlike the (group) parser, this does not require braces."
+  []
+  (bind (many (tex-token))
+        (fn [tokens] (always (Group. (seq tokens))))))
+
 ; (defn read
 ;   "Parse and simplify the TeX reader into a string of TeX"
 ;   [reader]
-;   (run (many (tex-token)) reader))
+;   (run (tex-document) reader))
 
 (defn read-str
-  "Parse a TeX string into a sequence of TeX tokens."
+  "Parse a TeX string into a sequence of TeX tokens, returning a Group instance."
   [string]
-  (run (many (tex-token)) string))
+  (run (tex-document) string))
 
 ;; writer
 
+(def ^{:dynamic true :private true} *root* true)
+(def ^{:dynamic true :private true} *flatten*)
+
 (defprotocol TeXWriter
   "Format TeX nodes"
-  (write-str [this] ; & _options
+  (-write-str [this]
     "Format the TeX data structure, `this`, returning a string."))
 
 (extend-protocol TeXWriter
-  clojure.lang.Sequential
-  (write-str [coll]
-    (str/join (map write-str coll)))
   Group
-  (write-str [group]
-    (str \{ (write-str (:coll group)) \}))
+  (-write-str [group]
+    ; we always suppress braces at the root, and lower down if *flatten* is true
+    (let [braces? (when-not *root* (not *flatten*))]
+      ; anything lower down is not root
+      (binding [*root* false]
+        (str (when braces? \{)
+             (str/join (map -write-str (:tokens group)))
+             (when braces? \})))))
   ControlSequence
-  (write-str [control-sequence]
+  (-write-str [control-sequence]
     (str \\ (:name control-sequence)))
-  #?@(:clj [Character
-            (write-str [character]
-              character)])
-  #?(:clj String :cljs string)
-  (write-str [string]
-    string)
+  #?(:clj Object :cljs default) ; e.g., Character or String/string
+  (-write-str [value]
+    value)
   nil
-  (write-str [_]
+  (-write-str [_]
     nil))
+
+(defn write-str
+  "Convert TeX data structure into TeX-formatted string"
+  [item & options]
+  (let [{:keys [flatten]
+         :or   {flatten false}} options]
+    (binding [*flatten* flatten]
+      (-write-str item))))
 
 (defn write
   "Write TeX-formatted output to a java.io.Writer."
@@ -227,11 +248,11 @@
 
 (defn join
   "Return a new TeX sequence that is the concatenation of the given TeX sequences,
-  separated by separator (a TeX token of some sort), if given."
+  separated by separator (a list of TeX tokens), if given."
   ([documents]
-   (apply concat documents))
+   (Group. (mapcat :tokens documents)))
   ([separator documents]
-   (apply concat (interpose separator documents))))
+   (Group. (apply concat (interpose separator (map :tokens documents))))))
 
 ;; interpretation
 
@@ -317,53 +338,47 @@
     :else 1))
 
 (defn- interpret-accent-command
-  "Find the combining character and put it after the argument"
-  [command-name arguments]
-  {:pre [(< (count arguments) 2)]} ; arguments can be nil (count => 0) or have a single item (count => 1)
+  "Find the combining character and put it after the argument.
+  Returns a raw sequence of TeX tokens."
+  [command-name [argument & more]]
+  {:pre [(nil? more) ; the second argument can be 0- or 1-long, but no longer
+         (not (sequential? argument))]} ; the argument can be nil, a Group instance, or a primitive token
   (let [combining-character (accent-command->combining-character command-name)
-        argument (first arguments)]
-    ; TODO: handle the edge cases here
-    (if (or (nil? argument) (sequential? argument))
-      (if (empty? argument)
-        ; if the given argument is empty, fabricate a space to combine with
-        (list \space combining-character)
-        ; else, dig in to find a viable target
-        (let [tokens (drop-while blank? argument)]
-          (if (char? (first tokens))
-            ; okay, put it after that
-            (list* (first tokens) combining-character (rest tokens))
-            ; otherwise, use a dummy space to stick it right here
-            (list* \space combining-character tokens))))
-      ; argument is a single non-nil value, probably a character
+        ; default argument to an empty group if missing
+        argument (or argument (Group. nil))]
+    (if (instance? Group argument)
+      (let [tokens (:tokens argument)]
+        (if (empty? tokens)
+          ; if the given argument is empty, fabricate a space to combine with
+          (list \space combining-character)
+          ; else, dig in to find a viable target
+          (let [tokens (drop-while blank? tokens)]
+            (if (char? (first tokens))
+              ; okay, put it after that
+              (list* (first tokens) combining-character (rest tokens))
+              ; otherwise, use a dummy space to stick it right here
+              (list* \space combining-character tokens)))))
+      ; argument is a single non-nil value, probably a character;
+      ; TODO: if it's nil, e.g. due to \relax, is that the caller's problem?
       (list argument combining-character))))
 
 (defn- interpret-command
+  "Returns a sequence of TeX tokens replacing the command"
   [command-name arguments]
   (cond
-    ; if we've got a simple command -> character substitution, do it.
-    (contains? command->character command-name) (command->character command-name)
+    ; if we've got a simple command -> character substitution, do it
+    (contains? command->character command-name) (list (command->character command-name))
     ; interpreting accent commands is a bit tricky, so we jump off to a separate function
     (accent-command? command-name) (interpret-accent-command command-name arguments)
     ; other control symbols are replaced with their literal name
-    (not (control-word? command-name)) command-name
+    (not (control-word? command-name)) (seq command-name)
     ; otherwise, return the interpreted arguments, and drop the command-name
     :else arguments))
 
-(declare interpret-tokens)
-
-(defn interpret-commands
-  "Replace fancy characters, unescape accents, and flatten groups."
-  [tree]
-  (condp instance? tree
-    ; reduce sequences via interpret-tokens
-    #?(:clj clojure.lang.Sequential :cljs ICollection) (interpret-tokens tree)
-    ; extract the contents of a group (and drop the group-ness)
-    Group (interpret-tokens (:coll tree))
-    ; interpret a lone command; commands that are used in a proper sequence won't end up here,
-    ; only commands that are a naked argument to another command (which is atypical)
-    ControlSequence (interpret-command (:name tree) nil)
-    ; identity for everything else (primitive values)
-    tree))
+(defprotocol TeXCompiler
+  "Compile/interpret TeX nodes"
+  (interpret-commands [this]
+    "Replace fancy characters and unescape accents."))
 
 (defn- interpret-tokens
   "Interpret `tokens` as a sequence of TeX tokens.
@@ -385,9 +400,28 @@
               ; interpret each of the given arguments before we get to them
               arguments (map interpret-commands argument-tokens)]
           ; now pack together the result of the command and its arguments we just captured
-          (cons (interpret-command command-name arguments)
-                ; and continue with the sequence following all that
-                (interpret-tokens (drop arity (rest tokens)))))
+          (concat (interpret-command command-name arguments)
+                  ; and continue with the sequence following all that
+                  (interpret-tokens (drop arity (rest tokens)))))
         ; otherwise we process it directly and continue on
         (cons (interpret-commands token)
               (interpret-tokens (rest tokens)))))))
+
+(extend-protocol TeXCompiler
+  ; process the contents of a Group (but it always remains a Group instance)
+  Group
+  (interpret-commands [group]
+    (update group :tokens interpret-tokens))
+  ; interpret a lone command; commands that are used in a proper sequence won't end up here,
+  ; only commands that are a naked argument to another command (which is atypical)
+  ControlSequence
+  (interpret-commands [control-sequence]
+    ; TODO: come up with better solution than this dummy Group.
+    (Group. (interpret-command (:name control-sequence) nil)))
+  ; identity for everything else (primitive values)
+  #?(:clj Object :cljs default)
+  (interpret-commands [value]
+    value)
+  nil
+  (interpret-commands [_]
+    nil))
