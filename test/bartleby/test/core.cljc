@@ -31,7 +31,6 @@
                                                          "year" "2007"})
                     (tex->Reference "book" "vital-etal" {"author" "Vital, Percy and Chambers, Vera and Lucky von Duck"
                                                          "year" "2010"})]
-        tex-string "We saw most recently in Littlemore 2016 that the efforts of Vital, Chambers and Duck (2010) were not what they seemed (Adams and Donut 2007)."
-        expected "We saw most recently in \\citealt{littlemore} that the efforts of \\citet{vital-etal} were not what they seemed \\citep{adamsdonut}."
-        actual (core/interpolate tex-string references)]
-    (is (= expected actual))))
+        tex-string "C.f. Littlemore 2016 wherein Vital, Chambers and Duck (2010) disagreed (Adams and Donut 2007)."]
+    (is (= "C.f. \\citealt{littlemore} wherein \\citet{vital-etal} disagreed \\citep{adamsdonut}."
+           (core/interpolate tex-string references)))))
