@@ -68,19 +68,12 @@
   ; offer is only valid when wrapped in an (attempt ...)
   (either (attempt p) (always nil)))
 
-(defn- curly-braced [p]
-  ; p, e.g., (many (any-char-except-in #{\{ \}}))
-  (between (char \{) (char \}) p))
-
-(defn- double-quoted [p]
-  (between (char \") (char \") p))
-
 (defn field-value
   "Read the RHS of a field-value field pair, as a string"
   []
   ; should this handle whitespace, or should the field parser (as is currently the case)?
-  (choice (curly-braced (many (tex/tex-token)))
-          (double-quoted (simple-string))
+  (choice (between (char \{) (char \}) (many (tex/tex-token)))
+          (between (char \") (char \") (simple-string))
           ; TODO: handle string variable references
           (number-literal)))
 
