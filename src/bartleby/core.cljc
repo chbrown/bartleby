@@ -1,5 +1,4 @@
 (ns bartleby.core
-  (:refer-clojure :exclude [read])
   (:require [clojure.string :as str]
             [bartleby.util :refer [re-escape author->lastnames format-names]]
             [bartleby.language.bibtex :as bibtex]
