@@ -19,6 +19,8 @@
 (defn expand-citekeys
   "Recurse into crossref fields to find all used citekeys"
   [items citekeys]
+  {:pre [(every? Reference? items)
+         (every? string? citekeys)]}
   (loop [citekeys-set (set citekeys)]
     (let [extended-citekeys-set (->> items
                                      ; find the items indicated by citekeys
@@ -29,6 +31,7 @@
                                      (filter #(= (str/lower-case (:key %)) "crossref"))
                                      ; get field value
                                      (map :value)
+                                     (map tex/write-str)
                                      (set)
                                      (into citekeys-set))]
       ; if no new citekeys have been added to extended-citekeys-set, we're done

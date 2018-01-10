@@ -13,7 +13,7 @@
 (extend-protocol ToJSON
   Field
   (toJSON [{:keys [key value]}]
-    {key (-> value tex/interpret-commands tex/write-str)})
+    {key (-> value tex/interpret-commands (tex/write-str :flatten true))})
   Reference
   (toJSON [{:keys [pubtype citekey fields]}]
     (into {"pubtype" pubtype, "citekey" citekey} (map toJSON fields)))
@@ -29,6 +29,6 @@
     (let [pubtype (get object "pubtype")
           citekey (get object "citekey")
           fields-map (dissoc object "pubtype" "citekey")
-          fields (map (fn [[key value]] (Field. key [value])) fields-map)]
+          fields (map (fn [[key value]] (Field. key (tex/read-str value))) fields-map)]
       (Reference. pubtype citekey fields))
     (Gloss. (get object "lines"))))

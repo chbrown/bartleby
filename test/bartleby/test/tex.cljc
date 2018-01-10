@@ -11,7 +11,7 @@
   (-> s
       tex/read-str
       tex/interpret-commands
-      tex/write-str
+      (tex/write-str :flatten true)
       normalize-unicode
       ; (?!\p{M}) is a negative lookahead for a character in a Unicode <any>-Mark category
       ; this lets combining characters hold onto the character they're combining with

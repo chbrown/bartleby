@@ -2,6 +2,7 @@
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.java.io :as io]
             [bartleby.test.bibliography :refer [tex->Reference]]
+            [bartleby.language.tex :as tex]
             [bartleby.core :as core]
             [bartleby.util :as util]))
 
@@ -31,6 +32,6 @@
                                                          "year" "2007"})
                     (tex->Reference "book" "vital-etal" {"author" "Vital, Percy and Chambers, Vera and Lucky von Duck"
                                                          "year" "2010"})]
-        tex-string "C.f. Littlemore 2016 wherein Vital, Chambers and Duck (2010) disagreed (Adams and Donut 2007)."]
-    (is (= "C.f. \\citealt{littlemore} wherein \\citet{vital-etal} disagreed \\citep{adamsdonut}."
-           (core/interpolate tex-string references)))))
+        raw-document (tex/read-str "C.f. Littlemore 2016 wherein Vital, Chambers and Duck (2010) disagreed (Adams and Donut 2007).")]
+    (is (= (tex/read-str "C.f. \\citealt{littlemore} wherein \\citet{vital-etal} disagreed \\citep{adamsdonut}.")
+           (core/interpolate raw-document references)))))

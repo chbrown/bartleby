@@ -109,7 +109,7 @@
   Field
   (as-elements [{:keys [key value]}]
     (let [create-value-element (get-from-mapping field-mapping key)
-          value-string (-> value tex/interpret-commands tex/write-str)]
+          value-string (-> value tex/interpret-commands (tex/write-str :flatten true))]
       (list (if create-value-element
               (create-value-element value-string)
               (create-comment (str key " = " value-string))))))
@@ -159,9 +159,8 @@
   [e]
   (xml/emit-str e :encoding "UTF-8" :doctype doctype))
 
-
 #?(:clj
-  (defn write
-    "Write JATS XML with JATS doctype"
-    [e ^java.io.Writer writer]
-    (xml/emit e writer :encoding "UTF-8" :doctype doctype)))
+   (defn write
+     "Write JATS XML with JATS doctype"
+     [e ^java.io.Writer writer]
+     (xml/emit e writer :encoding "UTF-8" :doctype doctype)))

@@ -4,6 +4,7 @@
             [clojure.data.json :as json]
             [clojure.data.xml :as xml]
             [bartleby.core :as core]
+            [bartleby.language.tex :as tex]
             [bartleby.language.bibtex :as bibtex]
             [bartleby.language.jats :as jats]
             [bartleby.language.json :refer [toJSON fromJSON]]
@@ -113,6 +114,7 @@
          (filter #(or (= (:name %) "/dev/stdin") (str/ends-with? (:name %) ".tex")))
          (map :reader)
          (map slurp)
+         (map tex/read-str)
          (map #(core/interpolate % references)))))
 
 (defn jats-command

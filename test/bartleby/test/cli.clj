@@ -2,6 +2,7 @@
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.java.io :as io]
             [clojure.string :as str]
+            [bartleby.language.tex :as tex]
             [bartleby.cli :as cli]))
 
 (defn- resource->named-reader
@@ -99,5 +100,5 @@
         filenames ["examples/literal/raw.bib" "examples/literal/raw.tex"]
         inputs (map resource->named-reader filenames)
         items (command-fn inputs)]
-    (is (= "C.f. \\citealt{littlemore} wherein \\citet{vital-etal} disagreed \\citep{adamsdonut}.\n"
+    (is (= (tex/read-str "C.f. \\citealt{littlemore} wherein \\citet{vital-etal} disagreed \\citep{adamsdonut}.\n")
            (first items)))))

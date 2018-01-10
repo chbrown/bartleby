@@ -72,7 +72,7 @@
   "Read the RHS of a field-value field pair, as a string"
   []
   ; should this handle whitespace, or should the field parser (as is currently the case)?
-  (choice (between (char \{) (char \}) (many (tex/tex-token)))
+  (choice (between (char \{) (char \}) (tex/tex-document))
           (between (char \") (char \") (simple-string))
           ; TODO: handle string variable references
           (number-literal)))
