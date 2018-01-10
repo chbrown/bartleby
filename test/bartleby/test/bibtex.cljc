@@ -4,10 +4,11 @@
             [clojure.string :as str]
             [clojure.data.json :as json]
             [the.parsatron :refer [run]]
+            [bartleby.test.bibliography :refer [tex->Field tex->Reference]]
             [bartleby.language.tex :as tex]
             [bartleby.language.bibtex :as bibtex]
             [bartleby.language.json :refer [toJSON]]
-            [bartleby.bibliography :as bibliography :refer [->Field ->Reference ->Gloss]]
+            [bartleby.bibliography :refer [->Field ->Reference ->Gloss]]
             [bartleby.core :as core]
             [bartleby.util :as util]))
 
@@ -42,11 +43,11 @@
           expected "1\n2"]
       (is (= expected actual))))
   (testing "rendering Reference"
-    (let [actual (bibtex/write-str (->Reference "book" "benjamin" [(->Field "title" ["Reason"])]))
+    (let [actual (bibtex/write-str (tex->Reference "book" "benjamin" {"title" "Reason"}))
           expected "@book{benjamin,\n  title = {Reason},\n}\n"]
       (is (= expected actual))))
   (testing "rendering Reference without citeky"
-    (let [actual (bibtex/write-str (->Reference "book" nil [(->Field "title" ["Apparent"])]))
+    (let [actual (bibtex/write-str (tex->Reference "book" nil {"title" "Apparent"}))
           expected "@book{\n  title = {Apparent},\n}\n"]
       (is (= expected actual)))))
 
@@ -62,10 +63,9 @@
 
 (deftest test-field-value-parser
   (testing "hard-casing block"
-    (let [input "{{MALLET}: A Machine Learning for Language Toolkit}"
-          actual (tex/write-str (run (bibtex/field-value) input))
-          expected "{MALLET}: A Machine Learning for Language Toolkit"]
-      (is (= expected actual))))
+    (let [input "{{MALLET}: A Machine Learning for Language Toolkit}"]
+      (is (= "{MALLET}: A Machine Learning for Language Toolkit"
+             (tex/write-str (run (bibtex/field-value) input))))))
   (testing "command blocks"
     (let [input "{Putting the \\textbf{Par} back in \\emph{\\textbf{Par}}sing}"
           actual (tex/write-str (run (bibtex/field-value) input))
