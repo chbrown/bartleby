@@ -99,8 +99,6 @@
       zip/next
       zip/node)
 
-  (-> "\\'" (debug-tex-transformations #'tex/interpret-character-commands
-                                       #'tex/interpret-accent-commands
-                                       #'tex/flatten))
+  (debug-tex-transformations "\\'" #'tex/interpret-commands)
 
   nil)
