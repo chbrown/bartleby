@@ -11,6 +11,7 @@
             [the.parsatron :as parsatron]
             [bartleby.cli :as cli]
             [bartleby.core :as core]
+            [bartleby.util :as util]
             [bartleby.bibliography :refer [->Field ->Reference ->Gloss]]
             [bartleby.language.bibtex :as bibtex]
             [bartleby.language.jats :as jats]
