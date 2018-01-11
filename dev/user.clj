@@ -65,35 +65,24 @@
       (println "Output" output)
       item)))
 
-(defn debug-tex
-  "Parse input as TeX, printing the raw input, the input tree representation,
-  and the output representation of that tree"
-  [input]
-  (println "🔣  Input " input)
-  (let [tree (tex/read-str input)]
-    (println "🌲  Tree  " (pr-str tree))
-    (let [output (tex/write-str tree)]
-      (println "🐣  Output" output)
-      tree)))
-
 (defn debug-tex-transformations
-  "Parse `input` as TeX, printing the raw input string, the parsed tree
+  "Parse `input` as TeX, printing the raw input string, the parsed input tree
   representation, and generate a TeX string of that (mostly untransformed) tree.
   Then transform the input tree with `f`, print the transformed tree structure,
   and finally generate the TeX string of that transformed tree.
   Returns the transformed tree."
   [input & fs]
-  (println "🔣  Input " input)
+  (println "🔣  Input " (pr-str input))
   (let [tree (tex/read-str input)]
     (println "🌲  Tree  " (pr-str tree))
-    (println "🐣  Middle" (tex/write-str tree))
+    (println "🐣  TeX   " (pr-str (tex/write-str tree)))
     (let [transformed-tree (reduce (fn [prev-tree f]
                                      (println "ƒ " (:name (meta f)))
                                      (let [next-tree (f prev-tree)]
                                        (println "🎄  Tree  " (pr-str next-tree))
-                                       next-tree)) tree fs)
-          output (tex/write-str transformed-tree)]
-      (println "💥  Output" output)
+                                       (println "🐣  TeX   " (pr-str (tex/write-str next-tree)))
+                                       next-tree)) tree fs)]
+      (println "💥  Output" (pr-str (tex/write-str transformed-tree)))
       transformed-tree)))
 
 (comment
@@ -103,7 +92,7 @@
 
   (trace/trace-ns 'clojure.zip)
 
-  (print-zip-table (debug-tex "\\'{}a"))
+  (print-zip-table (debug-tex-transformations "\\'{}a"))
 
   (-> '(:emph (:textbf (\b \o \l \d \+ \i \t \a \l \i \c)))
       zip/seq-zip
