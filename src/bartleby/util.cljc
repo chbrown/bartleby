@@ -16,10 +16,22 @@
       ; java.lang.String implements java.lang.CharSequence
       (and (string? x) (str/blank? x))))
 
+(def ^:private collapsible-space-pattern
+  "RegEx pattern that matches a stretch of whitespace that can be collapsed into
+  a single space, which would be trivial except for combining marks, which this
+  pattern accommodates (it lets combining characters hold onto the character
+  they're combining with), and does so cross-platform (a bit of a hack for CLJS).
+  * JVM: (?!\\p{Mn}) is a negative lookahead for a character in the Unicode
+    Nonspacing_Mark general category
+  * CLJS: JavaScript regular expressions do not support \\p{...},
+    but the 0x300-0x36F range covers most of the Unicode Nonspacing_Mark (Mn) category."
+  #?(:clj  #"\s+(?!\p{M})"
+     :cljs #"\s+(?![\u0300-\u036F])"))
+
 (defn collapse-space
   "Replace all sequences of whitespace in s with a single space"
   [s]
-  (str/replace s #"\s+" " "))
+  (str/replace s collapsible-space-pattern " "))
 
 (defn map-values
   "Contruct a new map with all the values of the map kvs passed through f"

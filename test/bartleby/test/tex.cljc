@@ -1,7 +1,7 @@
 (ns bartleby.test.tex
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.string :as str]
-            [bartleby.util :refer [normalize-unicode]]
+            [bartleby.util :refer [normalize-unicode collapse-space]]
             [bartleby.language.tex :as tex]))
 
 (defn tex->tex
@@ -13,9 +13,7 @@
       tex/interpret-commands
       (tex/write-str :flatten true)
       normalize-unicode
-      ; (?!\p{M}) is a negative lookahead for a character in a Unicode <any>-Mark category
-      ; this lets combining characters hold onto the character they're combining with
-      (str/replace #" +(?!\p{M})" " ")))
+      collapse-space))
 
 (deftest test-tex->tex
   (testing "rendering accents as combining characters"
