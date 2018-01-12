@@ -19,10 +19,11 @@
 (defn expand-citekeys
   "Recurse into crossref fields to find all used citekeys"
   [items citekeys]
-  {:pre [(every? Reference? items)
-         (every? string? citekeys)]}
+  {:pre [(every? string? citekeys)]}
   (loop [citekeys-set (set citekeys)]
     (let [extended-citekeys-set (->> items
+                                     ; limit to references (the subsequent filter implicitly does this too)
+                                     (filter Reference?)
                                      ; find the items indicated by citekeys
                                      (filter #(contains? citekeys-set (:citekey %)))
                                      ; flatten out to selected items' fields
