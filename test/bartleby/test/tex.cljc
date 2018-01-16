@@ -1,6 +1,5 @@
 (ns bartleby.test.tex
   (:require [clojure.test :refer [deftest is testing]]
-            [clojure.string :as str]
             [bartleby.util :refer [normalize-unicode collapse-space]]
             [bartleby.language.tex :as tex]))
 
