@@ -1,6 +1,7 @@
 (ns bartleby.test.core
+  #?(:cljs (:require-macros [bartleby.test-resources :refer [read-resource-string]]))
   (:require [clojure.test :refer [deftest is testing]]
-            [clojure.java.io :as io]
+            #?(:clj [bartleby.test-resources :refer [read-resource-string]])
             [bartleby.test.bibliography :refer [tex->Reference]]
             [bartleby.language.tex :as tex]
             [bartleby.core :as core]
@@ -8,11 +9,11 @@
 
 (deftest test-citekeys
   (testing "extraction from tex"
-    (let [actual (-> "examples/multi/paper.tex" io/resource slurp core/tex->citekeys)
+    (let [actual (core/tex->citekeys (read-resource-string "examples/multi/paper.tex"))
           expected ["J93-2004" "papineni-EtAl:2002:ACL"]]
       (is (= expected actual))))
   (testing "extraction from aux"
-    (let [actual (-> "examples/multi/paper.aux" io/resource slurp core/aux->citekeys)
+    (let [actual (core/aux->citekeys (read-resource-string "examples/multi/paper.aux"))
           expected ["J93-2004" "papineni-EtAl:2002:ACL"]]
       (is (= expected actual)))))
 

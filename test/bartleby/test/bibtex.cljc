@@ -1,9 +1,10 @@
 (ns bartleby.test.bibtex
+  #?(:cljs (:require-macros [bartleby.test-resources :refer [read-resource-string read-resource-pairs]]))
   (:require [clojure.test :refer [deftest is testing]]
-            [clojure.java.io :as io]
             [clojure.string :as str]
             #?(:clj [clojure.data.json :as json])
             [the.parsatron :refer [run]]
+            #?(:clj [bartleby.test-resources :refer [read-resource-string read-resource-pairs]])
             [bartleby.test.bibliography :refer [tex->Field tex->Reference]]
             [bartleby.language.tex :as tex]
             [bartleby.language.bibtex :as bibtex]
@@ -25,22 +26,19 @@
   [obj]
   (util/map-values normalize-value obj))
 
-(def pairs-bibfiles (->> (io/resource "resources/pairs")
-                         (io/file)
-                         (.list)
-                         (filter #(str/ends-with? % ".bib"))
-                         (remove #(str/includes? % "with-strings"))
-                         (map #(str "pairs/" %))))
-
 (deftest test-bibtex-parser
-  (doseq [bibfile pairs-bibfiles]
-    (testing (str "parsing " bibfile " into json equivalent")
-      (let [jsonfile (str/replace bibfile ".bib" ".json")
-            ; is io/resource utf-8 by default?
-            actual (-> bibfile io/resource slurp bibtex/read-str toJSON normalize-json)
-            expected (-> jsonfile io/resource slurp parse-json)]
-        ; clojure.test doesn't care about order but (= expected actual) is how humane-test-output reads it
-        (is (= expected actual))))))
+  (let [pairs (read-resource-pairs)
+        bibfiles (->> (keys pairs)
+                      (filter #(str/ends-with? % ".bib"))
+                      ; string interpolation is not yet supported
+                      (remove #(str/includes? % "with-strings")))]
+    (doseq [bibfile bibfiles
+            :let [jsonfile (str/replace bibfile ".bib" ".json")]]
+      (testing (str "parsing " bibfile " into json equivalent")
+        (let [actual (-> bibfile pairs bibtex/read-str toJSON normalize-json)
+              expected (-> jsonfile pairs parse-json)]
+          ; clojure.test doesn't care about order but (= expected actual) is how humane-test-output reads it
+          (is (= expected actual)))))))
 
 (deftest test-write-str
   (testing "rendering Gloss"
@@ -57,8 +55,7 @@
       (is (= expected actual)))))
 
 (deftest test-examples
-  (let [filename "examples/multi/paper.bib"
-        input (-> filename io/resource io/reader slurp)]
+  (let [input (read-resource-string "examples/multi/paper.bib")]
     (testing "multi syntax"
       (is (core/bibtex? input)))
     (testing "multi"
