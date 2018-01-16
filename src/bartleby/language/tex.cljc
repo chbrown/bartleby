@@ -275,6 +275,11 @@
   ; TODO: is there a smarter way to do this?
   (update document :tokens #(->> % reverse (drop-while blank?) reverse)))
 
+(defn- starts-with?
+  "True if `coll` starts with `subcoll`"
+  [coll subcoll]
+  (= (take (count subcoll) coll) subcoll))
+
 (defn- index-of-sublist
   "Return the position of `target` within `source`,
   or nil if `target` cannot be found."
@@ -284,7 +289,11 @@
   #?(:clj  (let [index (java.util.Collections/indexOfSubList source target)]
              (when (not= index -1)
                index))
-     :cljs (throw (ex-info "index-of-sublist not yet implemented in CLJS" {:source source :target target}))))
+     :cljs (let [max-possible-index (- (count source) (count target))]
+             (when-not (neg? max-possible-index)
+               (->> (range (inc max-possible-index))
+                    (filter (fn [idx] (starts-with? (drop idx source) target)))
+                    (first))))))
 
 (defn replace
   "Search for `pattern` within `document` (within the root-level tokens), replacing via `replacement` if found.
