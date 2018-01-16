@@ -4,14 +4,11 @@
             [the.parsatron :as parsatron :refer [run let->> >> always attempt between bind char choice digit either eof lookahead many many1 string token]]
             [bartleby.bibliography :refer [->Field ->Reference ->Gloss
                                            #?@(:cljs [Field Reference Gloss])]]
+            [bartleby.language.texdata :refer [whitespace-characters]]
             [bartleby.language.tex :as tex])
   #?(:clj (:import (bartleby.bibliography Field Reference Gloss))))
 
 ;;; BIBTEX READER
-
-(def whitespace-characters
-  "Same as tex/whitespace-characters; see comment there."
-  #{\tab \newline \u000B \formfeed \return \space})
 
 (def delimiter-characters
   "Union of whitespace-characters and a few additional delimiters."
