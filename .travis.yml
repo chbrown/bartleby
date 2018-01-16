@@ -2,6 +2,13 @@ language: clojure
 jdk:
   - oraclejdk8
 lein: 2.8.1
+addons:
+  chrome: stable
+# before_install:
+#   - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &
+before_script:
+  - npm install karma karma-cljs-test karma-chrome-launcher
+  - npm install -g karma-cli
 script:
-  - lein do clean, test, doo rhino test once, cloverage --coveralls
+  - lein do clean, test, doo chrome-headless test once, cloverage --coveralls
   - curl -F 'json_file=@target/coverage/coveralls.json' 'https://coveralls.io/api/v1/jobs'
