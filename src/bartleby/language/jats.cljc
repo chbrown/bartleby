@@ -117,7 +117,7 @@
   (as-elements [{:keys [pubtype citekey fields]}]
     (list (element :ref {:id (xml-name citekey)}
             (element :element-citation {:publication-type (name (get-from-mapping pubtype-mapping pubtype))}
-              (as-elements fields)))))
+              (mapcat as-elements fields)))))
   Gloss
   (as-elements [{:keys [lines]}]
     (list (create-comment (str/join \newline lines)))))

@@ -2,7 +2,7 @@
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.java.io :as io]
             [clojure.string :as str]
-            [clojure.data.json :as json]
+            #?(:clj [clojure.data.json :as json])
             [the.parsatron :refer [run]]
             [bartleby.test.bibliography :refer [tex->Field tex->Reference]]
             [bartleby.language.tex :as tex]
@@ -11,6 +11,11 @@
             [bartleby.bibliography :refer [->Field ->Reference ->Gloss]]
             [bartleby.core :as core]
             [bartleby.util :as util]))
+
+(defn- parse-json
+  [json-string]
+  #?(:clj  (json/read-str json-string)
+     :cljs (js->clj (js/JSON.parse json-string))))
 
 (defn- normalize-value
   [value]
@@ -33,7 +38,7 @@
       (let [jsonfile (str/replace bibfile ".bib" ".json")
             ; is io/resource utf-8 by default?
             actual (-> bibfile io/resource slurp bibtex/read-str toJSON normalize-json)
-            expected (-> jsonfile io/resource slurp json/read-str)]
+            expected (-> jsonfile io/resource slurp parse-json)]
         ; clojure.test doesn't care about order but (= expected actual) is how humane-test-output reads it
         (is (= expected actual))))))
 

@@ -31,7 +31,7 @@
     (let [items (-> input bibtex/read-all doall)]
       ; it's not "BibTeX" if the only items are Gloss instances
       (some? (seq (remove :lines items))))
-    (catch Exception e false)))
+    (catch #?(:clj Exception :cljs js/Error) e false)))
 
 (defn reference->replacements
   "Generate sequence of replacement maps from the Reference r,
@@ -46,14 +46,14 @@
       ; {:match names
       ;  :output (format "\\citeauthor{%s}" citekey)
       ;  :priority 0}
-      [{:match (format "%s %s" author year)
-        :output (format "\\citealt{%s}" citekey)
+      [{:match (str author " " year)
+        :output (str "\\citealt{" citekey "}")
         :priority 10}
-       {:match (format "%s (%s)" author year)
-        :output (format "\\citet{%s}" citekey)
+       {:match (str author " (" year ")")
+        :output (str "\\citet{" citekey "}")
         :priority 50}
-       {:match (format "(%s %s)" author year)
-        :output (format "\\citep{%s}" citekey)
+       {:match (str "(" author " " year ")")
+        :output (str "\\citep{" citekey "}")
         :priority 100}])))
 
 (defn interpolate
