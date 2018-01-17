@@ -4,7 +4,6 @@
             [clojure.string :as str]
             [clojure.test :as test]
             [clojure.walk :as walk]
-            [clojure.zip :as zip]
             [clojure.java.io :as io]
             [clojure.data.json :as json]
             [clojure.data.xml :as xml]
@@ -16,44 +15,12 @@
             [bartleby.language.bibtex :as bibtex]
             [bartleby.language.jats :as jats]
             [bartleby.language.tex :as tex]
+            [bartleby.language.texdata :as texdata]
             [bartleby.language.json :refer [toJSON fromJSON]]
             [clojure.tools.trace :as trace]
             [clojure.tools.namespace.repl :refer [refresh refresh-all]]))
 
 (println "📕  Loading /dev/user 📖")
-
-(defn read-resource
-  [name]
-  (->> name
-       io/resource
-       io/reader
-       cli/char-seq
-       bibtex/read-all))
-
-(defn debug-loc
-  [loc]
-  {:path    (pr-str (some-> loc zip/path))
-   :depth   (count (some-> loc zip/path))
-   :left    (pr-str (some-> loc zip/left zip/node))
-   :node    (pr-str (some-> loc zip/node))
-   :right   (pr-str (some-> loc zip/right zip/node))
-   :next    (pr-str (some-> loc zip/next zip/node))
-   :branch? (try (zip/branch? loc) (catch Exception ex :error))
-   :end?    (some-> loc (zip/end?))})
-
-(defn lazy-loc-seq [loc]
-  (cons loc (when-not (zip/end? loc)
-              (lazy-seq (lazy-loc-seq (zip/next loc))))))
-
-(defn print-zip-table
-  ([tree]
-   ; [:left :node :right :next :branch? :end?]
-   (print-zip-table [:end? :depth :node :branch? :next] tree))
-  ([ks tree]
-   (->> (zip/seq-zip (seq tree))
-        (lazy-loc-seq)
-        (map debug-loc)
-        (print-table ks))))
 
 (defn debug-bibtex
   [input]
@@ -86,18 +53,9 @@
       transformed-tree)))
 
 (comment
-  (println (read-resource "examples/multi/paper.bib"))
+  (println (->> "examples/multi/paper.bib" io/resource io/reader cli/char-seq bibtex/read-all))
 
   (debug-bibtex "@book{benjamin,  title = {Reason \\emph{and} F\\`ate},}")
-
-  (trace/trace-ns 'clojure.zip)
-
-  (print-zip-table (debug-tex-transformations "\\'{}a"))
-
-  (-> '(:emph (:textbf (\b \o \l \d \+ \i \t \a \l \i \c)))
-      zip/seq-zip
-      zip/next
-      zip/node)
 
   (debug-tex-transformations "\\'" #'tex/interpret-commands)
 
