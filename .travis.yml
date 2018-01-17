@@ -1,12 +1,13 @@
+sudo: required
 language: clojure
 jdk:
   - oraclejdk8
 lein: 2.8.1
 addons:
   chrome: stable
-# before_install:
-#   - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &
 before_script:
+  - sudo chown root /opt/google/chrome/chrome-sandbox
+  - sudo chmod 4755 /opt/google/chrome/chrome-sandbox
   - npm install karma karma-cljs-test karma-chrome-launcher
   - npm install -g karma-cli
 script:
