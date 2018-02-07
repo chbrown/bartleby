@@ -192,7 +192,8 @@
              (when braces? \})))))
   ControlSequence
   (-write-str [control-sequence]
-    (str \\ (:name control-sequence)))
+    (when (not *flatten*)
+      (str \\ (:name control-sequence))))
   #?(:clj Object :cljs default) ; e.g., Character or String/string
   (-write-str [value]
     value)
