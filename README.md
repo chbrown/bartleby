@@ -145,4 +145,5 @@ Then go to that repo's directory, commit the changes with a message pointing to 
 
 ## License
 
-Copyright © 2016-2017 Christopher Brown. [MIT Licensed](https://chbrown.github.io/licenses/MIT/#2016-2017).
+Copyright © 2016-2018 Christopher Brown.
+[MIT Licensed](https://chbrown.github.io/licenses/MIT/#2016-2018).
