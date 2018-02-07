@@ -51,7 +51,9 @@
     (is (= [[1 2] [3 4 5 6]]
            (util/partition-dynamically [1 2 3 4 5 6] identity)))
     (is (= [[2 3 4]]
-           (util/partition-dynamically [2 3 4] identity))))
+           (util/partition-dynamically [2 3 4] identity)))
+    (is (= [[1 nil] [nil] [2 nil nil]]
+           (util/partition-dynamically [1 nil nil 2 nil nil] identity))))
   (testing "mapping arity"
     (is (= [[1] [2] [:plus 3 4] [:negate 5] [6]]
            (util/partition-dynamically [1 2 :plus 3 4 :negate 5 6] {:plus 2 :negate 1})))))
