@@ -385,3 +385,10 @@
   nil
   (interpret-commands [_]
     nil))
+
+(defn write-unicode-str
+  "Interpret as much TeX as much as possible and flatten into a non-TeX string"
+  [tree]
+  (-> tree
+      (interpret-commands)
+      (write-str :flatten true)))

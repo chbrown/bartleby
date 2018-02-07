@@ -9,8 +9,7 @@
   [s]
   (-> s
       tex/read-str
-      tex/interpret-commands
-      (tex/write-str :flatten true)
+      tex/write-unicode-str
       normalize-unicode
       collapse-space))
 
