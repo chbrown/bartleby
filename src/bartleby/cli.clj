@@ -36,7 +36,7 @@
 (defn- input->items
   "Parse input (a NamedReader) as BibTeX and read all bibliography items"
   [input]
-  (-> input :reader char-seq bibtex/read-all))
+  (->> input :reader char-seq bibtex/read-all))
 
 (defn- input->citekeys
   "Find all the citekeys referenced by input (a NamedReader)"
