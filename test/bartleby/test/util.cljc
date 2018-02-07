@@ -45,3 +45,13 @@
        "A"          ["A"]
        "A and B"    ["A" "B"]
        "A, B and C" ["A" "B" "C"]))
+
+(deftest test-partition-dynamically
+  (testing "identity arity"
+    (is (= [[1 2] [3 4 5 6]]
+           (util/partition-dynamically [1 2 3 4 5 6] identity)))
+    (is (= [[2 3 4]]
+           (util/partition-dynamically [2 3 4] identity))))
+  (testing "mapping arity"
+    (is (= [[1] [2] [:plus 3 4] [:negate 5] [6]]
+           (util/partition-dynamically [1 2 :plus 3 4 :negate 5 6] {:plus 2 :negate 1})))))

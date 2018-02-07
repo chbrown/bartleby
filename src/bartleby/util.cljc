@@ -84,3 +84,16 @@
                       ; group 2: simply take the final name
                       (list (str/join ", " (butlast names)) (last names))
                       names)))
+
+(defn partition-dynamically
+  "Group all the x's in `xs` into partitions based on the integer returned by (arity x)."
+  [coll arity]
+  {:pre [(coll? coll) (ifn? arity)]}
+  (lazy-seq
+    (when-let [item (first coll)]
+      (let [item-arity (or (arity item) 0)
+            [items more-coll] (split-at item-arity (rest coll))]
+        ; TODO: do something (throw?) if `items` is shorter than `item-arity`
+        (cons (list* item items)
+              ; continue on with the rest
+              (partition-dynamically more-coll arity))))))
