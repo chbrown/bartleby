@@ -90,8 +90,9 @@
   [coll arity]
   {:pre [(coll? coll) (ifn? arity)]}
   (lazy-seq
-    (when-let [item (first coll)]
-      (let [item-arity (or (arity item) 0)
+    (when (seq coll)
+      (let [item (first coll)
+            item-arity (or (arity item) 0)
             [items more-coll] (split-at item-arity (rest coll))]
         ; TODO: do something (throw?) if `items` is shorter than `item-arity`
         (cons (list* item items)
