@@ -1,4 +1,5 @@
-(ns bartleby.language.texdata)
+(ns bartleby.language.texdata
+  (:require [clojure.set :refer [map-invert]]))
 
 (def whitespace-characters
   "Set of the characters:
@@ -101,3 +102,19 @@
    "textrightarrow"       \→
    "texttrademark"        \™
    "textunderscore"       \_})
+
+(def character->command
+  "Mapping of non-nil special characters to corresponding 0-argument TeX commands"
+  (-> command->character
+      (map-invert)
+      (dissoc nil)))
+
+(def command->ligature
+  {"textexclamdown"    "!`"
+   "textquestiondown"  "?`"
+   "textemdash"        "---"
+   "textendash"        "--"
+   "textquotedblleft"  "``"
+   "textquoteleft"     "`"
+   "textquotedblright" "''"
+   "textquoteright"    "'"})
