@@ -10,7 +10,7 @@
      * `name`: a string (a single non-letter for control symbols)"
   (:refer-clojure :exclude [char read replace])
   (:require [clojure.string :as str]
-            [bartleby.util :refer [blank?]]
+            [bartleby.util :refer [blank? partition-dynamically]]
             [bartleby.language.texdata :refer [whitespace-characters
                                                accent-command->combining-character
                                                command->character]]
@@ -287,22 +287,16 @@
 
 ;; interpretation
 
-(defn- command->arity
-  "Return the positive integer arity of the command indicated by `command-name` (a string)"
+(defn accent-command-arity
   [command-name]
-  {:pre  [(string? command-name)]
-   :post [(integer? %)]}
-  (cond
-    (contains? command->character command-name) 0
-    (accent-command? command-name) 1
-    ; TODO: look it up in a contextual store somehow
-    :else 1))
+  (when (accent-command? command-name) 1))
 
-(defn- interpret-accent-command
+(defn accent-command-interpreter
   "Find the combining character and put it after the argument.
   Returns a raw sequence of TeX tokens."
   [command-name [argument & more]]
-  {:pre [(nil? more) ; the second argument can be 0- or 1-long, but no longer
+  {:pre [(accent-command? command-name)
+         (nil? more) ; the second argument can be 0- or 1-long, but no longer
          (not (sequential? argument))]} ; the argument can be nil, a Group instance, or a primitive token
   (let [combining-character (accent-command->combining-character command-name)
         ; default argument to an empty group if missing
@@ -323,23 +317,37 @@
       ; TODO: if it's nil, e.g. due to \relax, is that the caller's problem?
       (list argument combining-character))))
 
-(defn- interpret-command
-  "Returns a sequence of TeX tokens replacing the command"
+(defn character-command-arity
+  [command-name]
+  (when (contains? command->character command-name) 0))
+
+(defn character-command-interpreter
+  "if we've got a simple command -> character substitution, do it"
   [command-name arguments]
-  (cond
-    ; if we've got a simple command -> character substitution, do it
-    (contains? command->character command-name) (list (command->character command-name))
-    ; interpreting accent commands is a bit tricky, so we jump off to a separate function
-    (accent-command? command-name) (interpret-accent-command command-name arguments)
-    ; other control symbols are replaced with their literal name
-    (not (control-word? command-name)) (seq command-name)
-    ; otherwise, return the interpreted arguments, and drop the command-name
-    :else arguments))
+  {:pre [(empty? arguments)]}
+  (list (command->character command-name)))
+
+(defn control-symbol-arity
+  [command-name]
+  (when (not (control-word? command-name)) 0))
+
+(defn control-symbol-interpreter
+  "other control symbols are replaced with their literal name
+  (this should be preceded by accent interpretation)"
+  [command-name arguments]
+  {:pre [(empty? arguments)]}
+  (seq command-name))
 
 (defprotocol TeXCompiler
   "Compile/interpret TeX nodes"
-  (interpret-commands [this]
-    "Replace fancy characters and unescape accents."))
+  (interpret-commands [this command->arity interpreter]
+    "Find ControlSequence instances in `this`,
+    combine them with their subsequent arguments based on `command->arity`
+    (or skip over them if command->arity returns nil, indicated they're unrecognized),
+    and replace that combination with the result of `(interpreter command-name arguments)`
+
+    * command->arity is a function from a command name string to an non-negative integer, or nil
+    * interpreter is a function from a command name string and seq of TeX tokens to another seq of TeX tokens"))
 
 (defn- interpret-tokens
   "Interpret `tokens` as a sequence of TeX tokens.
@@ -348,48 +356,49 @@
        but since \\textbf is a 1-argument command, {\\textbf} is a parse error.
   Takes a sequence and returns a sequence.
   This processes nested values before wider/outer ones."
-  [tokens]
-  (lazy-seq
-    (when-let [token (first tokens)]
-      (if (instance? ControlSequence token)
-        ; if it's a control-sequence, get its name, collect its arguments, and interpret them
-        (let [command-name (:name token)
-              arity (command->arity command-name)
-              ; TODO: this needs to fail immediately here if (take arity ...)
-              ; returns a seq of less than length arity
-              argument-tokens (take arity (rest tokens))
-              ; interpret each of the given arguments before we get to them
-              arguments (map interpret-commands argument-tokens)]
-          ; now pack together the result of the command and its arguments we just captured
-          (concat (interpret-command command-name arguments)
-                  ; and continue with the sequence following all that
-                  (interpret-tokens (drop arity (rest tokens)))))
-        ; otherwise we process it directly and continue on
-        (cons (interpret-commands token)
-              (interpret-tokens (rest tokens)))))))
+  [tokens command->arity interpreter]
+  (let [arity (fn [token] (when (instance? ControlSequence token)
+                            ; if it's a control-sequence, get its name,
+                            ; collect its arguments, and interpret them
+                            (command->arity (:name token))))]
+    (->> (partition-dynamically tokens arity)
+         (mapcat (fn [[token0 & more]]
+                   (if (arity token0) ; nil implies the paired interpreter does not recognize it
+                     (let [; interpret each of the given arguments before we get to them
+                           arguments (map #(interpret-commands % command->arity interpreter) more)]
+                       ; now pack together the result of the command and its arguments we just captured
+                       (interpreter (:name token0) arguments))
+                     ; either it's a control-sequence, but we can't interpret it with `interpreter`,
+                     ; or it's not a command at all; in which case we simply pass it along
+                     ; otherwise we process it directly and continue on
+                     (cons token0 more)))))))
 
 (extend-protocol TeXCompiler
   ; process the contents of a Group (but it always remains a Group instance)
   Group
-  (interpret-commands [group]
-    (update group :tokens interpret-tokens))
+  (interpret-commands [group command->arity interpreter]
+    (update group :tokens interpret-tokens command->arity interpreter))
   ; interpret a lone command; commands that are used in a proper sequence won't end up here,
-  ; only commands that are a naked argument to another command (which is atypical)
+  ; only commands that are a naked argument to another command (which is atypical),
+  ; and we basically treat it as if they were grouped (by braces):
+  ; we wrap it in a Group and send it back up off to the protocol dispatcher
   ControlSequence
-  (interpret-commands [control-sequence]
+  (interpret-commands [control-sequence command->arity interpreter]
     ; TODO: come up with better solution than this dummy Group.
-    (Group. (interpret-command (:name control-sequence) nil)))
+    (interpret-commands (Group. (list control-sequence)) command->arity interpreter))
   ; identity for everything else (primitive values)
   #?(:clj Object :cljs default)
-  (interpret-commands [value]
+  (interpret-commands [value _ _]
     value)
   nil
-  (interpret-commands [_]
+  (interpret-commands [_ _ _]
     nil))
 
 (defn write-unicode-str
   "Interpret as much TeX as much as possible and flatten into a non-TeX string"
   [tree]
   (-> tree
-      (interpret-commands)
+      (interpret-commands accent-command-arity accent-command-interpreter)
+      (interpret-commands character-command-arity character-command-interpreter)
+      (interpret-commands control-symbol-arity control-symbol-interpreter)
       (write-str :flatten true)))
